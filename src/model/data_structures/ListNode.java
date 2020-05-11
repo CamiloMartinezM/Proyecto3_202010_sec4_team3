@@ -2,14 +2,14 @@ package model.data_structures;
 
 /**
  * Clase que contiene la información de un comparendo.
- * @author Camilo Martínez
+ * @author Camilo Martínez & Nicolás Quintero
  */
-public class Node<E>
+public class ListNode<E>
 {
 	/**
 	 * Referencia al siguiente nodo.
 	 */
-	private Node<E> next;
+	private ListNode<E> next;
 
 	/**
 	 * Referencia al item contenido dentro del Nodo.
@@ -19,7 +19,7 @@ public class Node<E>
 	/**
 	 * Inicializa un nodo vacío.
 	 */
-	public Node( )
+	public ListNode( )
 	{
 		this.next = null;
 		this.item = null;
@@ -29,7 +29,7 @@ public class Node<E>
 	 * Inicializa un nodo con la información dada por parámetro.
 	 * @param item Item que será contenido dentro del nodo.
 	 */
-	public Node( E item )
+	public ListNode( E item )
 	{
 		this.next = null;
 		this.item = item;
@@ -38,7 +38,7 @@ public class Node<E>
 	/**
 	 * @return Siguiente nodo.
 	 */
-	public Node<E> getNext( )
+	public ListNode<E> getNext( )
 	{
 		return next;
 	}
@@ -47,7 +47,7 @@ public class Node<E>
 	 * Cambia el nodo siguiente actual por uno nuevo dado por parámetro.
 	 * @param siguiente Siguiente nodo.
 	 */
-	public void setNext( Node<E> next )
+	public void setNext( ListNode<E> next )
 	{
 		this.next = next;
 	}

@@ -2,68 +2,238 @@ package test.data_structures;
 
 import static org.junit.Assert.*;
 
+import java.util.Iterator;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import model.data_structures.UndirectedGraph;
 
-public class TestUndirectedGraph {
+/**
+ * Test de la implementación del grafo no dirigido.
+ * @author Camilo Martínez & Nicolás Quintero
+ */
+public class TestUndirectedGraph
+{
+	/**
+	 * Número de vertices.
+	 */
+	public final int V = 40;
 
+	private UndirectedGraph<Integer, String, Double> grafo;
 
-	public final int CAPACITY =20;
-	private UndirectedGraph<Integer,String> grafo;
-    @Before
-    public void setUp(){
-    	grafo = new UndirectedGraph<Integer,String>(CAPACITY);
-    	grafo.addEdge(1, 2, 2000);
-    	grafo.addEdge(3, 4, 2000);
-    	grafo.addEdge(4, 5, 2000);
-        grafo.E();
-        grafo.addVertex(2, "74.08952746199998,4.582560966000017");
-        grafo.setCostArc(1, 2, 5000);
-        grafo.setInfoVertex(1, "holaMundo");
-        grafo.dfs(1);
+	/**
+	 * Inicializa un grafo vacío.
+	 */
+	@Before
+	public void setUp( )
+	{
+		grafo = new UndirectedGraph<>( V );
+	}
 
-    }
+	/**
+	 * Inicializa un grafo con arcos de i a i+V donde i recorre 0 a V - 1 y la
+	 * información de cada vertice i es un string de i concatenado con "-INFO".
+	 */
+	public void setUp2( )
+	{
+		int[] x = new int[V / 2];
+		int[] y = new int[V / 2];
+		for( int i = 0; i < V / 2; i++ )
+		{
+			x[i] = i;
+			y[i] = i + 20;
+		}
+
+		for( int i = 0; i < V / 2; i++ )
+		{
+			grafo.setVertexInfo( i, x[i] + "-INFO" );
+			grafo.addEdge( x[i], y[i], Math.sqrt( x[i] * x[i] + y[i] * y[i] ) );
+		}
+
+		for( int i = 0; i < V; i++ )
+			grafo.setVertexItem( i, i + 100 );
+	}
+
+	/**
+	 * Inicializa un grafo con arcos de i a i+V donde i recorre 0 a V-1 y también,
+	 * de i a i+1 donde i recorre de 0 a V-2 y la información de cada vertice i es
+	 * un string de i concatenado con "-INFO".
+	 */
+	public void setUp3( )
+	{
+		setUp2( );
+
+		for( int i = 0; i < ( V - 1 ); i++ )
+		{
+			grafo.addEdge( i, i + 1, Math.sqrt( i * i + Math.pow( i + 1, 2 ) ) );
+			grafo.setVertexItem( i, i + 100 );
+		}
+	}
+
 	@Test
-	public void CreacionGrafoTest() {
+	public void TestNumberOfVertices( )
+	{
+		setUp2( );
+		assertEquals( "Falló encontrar el número de vertices.", V, grafo.numberOfVertices( ) );
 
-		setUp();
-		assertEquals("debieron crearse"+CAPACITY,20,grafo.V());
+		setUp3( );
+		assertEquals( "Falló encontrar el número de vertices.", V, grafo.numberOfVertices( ) );
 	}
-	
+
 	@Test
-	public void CreacionEdgeTest() {
-		setUp();
-		assertEquals("debieron crearse 3",3,grafo.E());
+	public void TestNumberOfEdges( )
+	{
+		setUp2( );
+		assertEquals( "Falló encontrar el número de arcos.", V / 2, grafo.numberOfEdges( ) );
+
+		setUp3( );
+		assertEquals( "Falló encontrar el número de arcos.", V / 2 + ( V - 1 ), grafo.numberOfEdges( ) );
 	}
-	
+
 	@Test
-	public void DfsTest(){
-		setUp();
-		assertEquals("solo se tiene 1 adyacencia desde 1",1,grafo.cc());
+	public void TestAddEdge( )
+	{
+		grafo.addEdge( 0, 1, 10.0 ); // Nuevo
+		grafo.addEdge( 1, 2, 20.0 ); // Nuevo
+		grafo.addEdge( 0, 1, 10.0 ); // Ya existe y tiene el mismo costo
+		grafo.addEdge( 1, 0, 20.0 ); // Ya existe pero se actualiza el costo de 10.0 a 20.0
+
+		assertEquals( "No agregó correctamente los arcos.", 2, grafo.numberOfEdges( ) );
+		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeCost( 1, 0 ).doubleValue( ) + "" );
+		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeCost( 0, 1 ).doubleValue( ) + "" );
 	}
 
-	@SuppressWarnings("deprecation")
 	@Test
-	public void SetCostTest(){
-		setUp();
-		double costo =grafo.getCostArc(1,2);
-	    assertEquals("debe ser 5000",5000,costo );
-	}
-	public void SetInfoVertexTest(){
-		setUp();
-		assertEquals("debe ser hola mundo",1,grafo.getInfoVertex(1));
-	}
-
-	public void uncheck(){
-		setUp();
-		grafo.uncheck();
-		assertEquals("Deberia retornar true si es visitado",false,grafo.visit(1));
-	}
-	public void ccTest(){
-		setUp();
-		assertEquals("El numero deberia ser 2",2, grafo.cc());
+	public void TestGetEdgeCost( )
+	{
+		for( int i = 0; i < V / 2; i++ )
+			assertEquals( "No debería haber ningún costo.", null, grafo.getEdgeCost( i, i + 20 ) );
+		
+		setUp2( );
+		
+		for( int i = 0; i < V / 2; i++ )
+			assertEquals( "No se encontró el costo real.", Math.sqrt( i * i + ( i + 20 ) * ( i + 20 ) ) + "",
+					grafo.getEdgeCost( i, i + 20 ) + "" );
 	}
 
+	@Test
+	public void TestAdj( )
+	{
+		Iterator<Integer> iter;
+		int j;
+		for( int i = 0; i < V; i++ )
+		{
+			iter = grafo.adj( i ).iterator( );
+			j = 0;
+			while( iter.hasNext( ) )
+			{
+				iter.next( );
+				j++;
+			}
+
+			assertEquals( "No hay arcos aún.", 0, j );
+		}
+
+		setUp2( );
+
+		for( int i = 0; i < V; i++ )
+		{
+			iter = grafo.adj( i ).iterator( );
+			j = 0;
+			while( iter.hasNext( ) )
+			{
+				iter.next( );
+				j++;
+			}
+
+			assertEquals( "Cada vertice se planteó para tener un único adyacente.", 1, j );
+		}
+
+		setUp3( );
+
+		for( int i = 0; i < V; i++ )
+		{
+			iter = grafo.adj( i ).iterator( );
+			j = 0;
+			while( iter.hasNext( ) )
+			{
+				iter.next( );
+				j++;
+			}
+
+			if( i == 0 || i == ( V - 1 ) )
+				assertEquals( "El vertice 0 y " + ( V - 1 ) + " deben tener 2 adyacentes.", 2, j );
+			else
+				assertEquals( "Cada vertice se planteó para tener 3 adyacentes.", 3, j );
+		}
+	}
+
+	@Test
+	public void TestDegreeOf( )
+	{
+		for( int i = 0; i < V; i++ )
+			assertEquals( "No hay ningún arco. El grado debe ser 0.", 0, grafo.degreeOf( i ) );
+
+		setUp2( );
+
+		for( int i = 0; i < V; i++ )
+			assertEquals( "El grado debe ser 1.", 1, grafo.degreeOf( i ) );
+
+		setUp3( );
+
+		assertEquals( "El grado del vertice 0 debe ser 2.", 2, grafo.degreeOf( 0 ) );
+
+		for( int i = 1; i < V - 1; i++ )
+			assertEquals( "El grado debe ser 3.", 3, grafo.degreeOf( i ) );
+
+		assertEquals( "El grado del vertice " + ( V - 1 ) + " debe ser 2.", 2, grafo.degreeOf( V - 1 ) );
+	}
+
+	@Test
+	public void TestSetVertexItem( )
+	{
+		grafo.setVertexItem( 0, 1 );
+		Iterator<Integer> iter = grafo.vertexItems( 0 );
+		assertEquals( "No guardó el item.", 1, iter.next( ).intValue( ) );
+		assertEquals( "No guardó el item.", false, iter.hasNext( ) );
+
+		grafo.setVertexItem( 1, 1 );
+		grafo.setVertexItem( 1, 2 );
+		grafo.setVertexItem( 1, 3 );
+		iter = grafo.vertexItems( 1 );
+		assertEquals( "No guardó el item.", 1, iter.next( ).intValue( ) );
+		assertEquals( "No guardó el item.", 2, iter.next( ).intValue( ) );
+		assertEquals( "No guardó el item.", 3, iter.next( ).intValue( ) );
+		assertEquals( "No guardó el item.", false, iter.hasNext( ) );
+	}
+
+	@Test
+	public void TestSetVertexInfo( )
+	{
+		grafo.setVertexInfo( 0, "1" );
+		assertEquals( "No guardó la información.", "1", grafo.getVertexInfo( 0 ) );
+
+		grafo.setVertexInfo( 1, "1" );
+		assertEquals( "No guardó la información.", "1", grafo.getVertexInfo( 1 ) );
+
+		grafo.setVertexInfo( 1, "2" );
+		assertEquals( "No guardó la información.", "2", grafo.getVertexInfo( 1 ) );
+	}
+
+	@Test
+	public void TestGetVertexInfo( )
+	{
+		setUp2( );
+
+		for( int i = 0; i < V / 2; i++ )
+			assertEquals( "No se obtuvo la información que era.", i + "-INFO", grafo.getVertexInfo( i ) );
+	}
+
+	@Test
+	public void TestVertexItems( )
+	{
+		for( int i = 0; i < V; i++ )
+			assertEquals( "No debería haber items en ningún vertice.", false, grafo.vertexItems( i ).hasNext( ) );
+	}
 }

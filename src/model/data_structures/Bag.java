@@ -3,20 +3,24 @@ package model.data_structures;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class Bag<Item> implements Iterable<Item>
+/**
+ * Implementación de una bolsa simple.
+ * @author Camilo Martínez & Nicolás Quintero
+ */
+public class Bag<E> implements Iterable<E>
 {
-	private Node<Item> first;
+	/**
+	 * Referencia al primer elemento de la bolsa.
+	 */
+	private ListNode<E> first;
+	
+	/**
+	 * Número de elementos en la bolsa.
+	 */
 	private int n;
 
-	// helper linked list class
-	private static class Node<Item>
-	{
-		private Item item;
-		private Node<Item> next;
-	}
-
 	/**
-	 * Inicializa una bolsa vacia.
+	 * Inicializa una bolsa vacía.
 	 */
 	public Bag( )
 	{
@@ -25,8 +29,7 @@ public class Bag<Item> implements Iterable<Item>
 	}
 
 	/**
-	 * Retorna verdadero si la bolsa esta vacia.
-	 * @return booleano que indica si la bolsa esta bacia;
+	 * @return booleano que indica si la bolsa está vacía.
 	 */
 	public boolean isEmpty( )
 	{
@@ -34,8 +37,7 @@ public class Bag<Item> implements Iterable<Item>
 	}
 
 	/**
-	 * retorna numero de elementos en la bolsa.
-	 * @return numero de elmentos en al bolsa.
+	 * @return Número de elmentos en al bolsa.
 	 */
 	public int size( )
 	{
@@ -44,31 +46,31 @@ public class Bag<Item> implements Iterable<Item>
 
 	/**
 	 * Agrega el elemento al a bolsa.
-	 * @param el elementoa agregar
+	 * @param item el elementoa agregar.
 	 */
-	public void add( Item item )
+	public void add( E item )
 	{
-		Node<Item> oldfirst = first;
-		first = new Node<Item>( );
-		first.item = item;
-		first.next = oldfirst;
+		ListNode<E> oldfirst = first;
+		first = new ListNode<E>( );
+		first.setItem( item );
+		first.setNext( oldfirst );
 		n++;
 	}
 
 	/**
 	 * Un iterador para la bolsa que la recorre en orden arbitratrio.
-	 * @return iterador
+	 * @return iterador.
 	 */
-	public Iterator<Item> iterator( )
+	public Iterator<E> iterator( )
 	{
 		return new LinkedIterator( first );
 	}
 
-	private class LinkedIterator implements Iterator<Item>
+	private class LinkedIterator implements Iterator<E>
 	{
-		private Node<Item> current;
+		private ListNode<E> current;
 
-		public LinkedIterator( Node<Item> first )
+		public LinkedIterator( ListNode<E> first )
 		{
 			current = first;
 		}
@@ -83,14 +85,13 @@ public class Bag<Item> implements Iterable<Item>
 			throw new UnsupportedOperationException( );
 		}
 
-		public Item next( )
+		public E next( )
 		{
 			if( !hasNext( ) )
 				throw new NoSuchElementException( );
-			Item item = current.item;
-			current = current.next;
+			E item = current.getItem( );
+			current = current.getNext( );
 			return item;
 		}
 	}
-
 }

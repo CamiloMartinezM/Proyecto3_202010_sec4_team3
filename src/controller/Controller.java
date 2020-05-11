@@ -60,8 +60,7 @@ public class Controller
 					}
 					catch( IOException e2 )
 					{
-						// TODO Auto-generated catch block
-						e2.printStackTrace();
+						System.out.println( "\nHubo un problema cargando el grafo de las fuentes de datos.\n" );
 					}
 					break;
 
@@ -96,6 +95,7 @@ public class Controller
 					catch( Exception e )
 					{
 						view.printMessage( "\nHubo un problema cargando los datos.\n" );
+						e.printStackTrace( );
 					}
 					break;
 					

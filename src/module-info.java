@@ -1,6 +1,5 @@
-module T7_202010
+module proyecto3
 {
-	requires java.desktop;
 	exports test.data_structures;
 	exports controller;
 	exports view;
@@ -9,5 +8,6 @@ module T7_202010
 	exports model.data_structures;
 
 	requires com.google.gson;
+	requires java.desktop;
 	requires junit;
 }

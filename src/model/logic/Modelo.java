@@ -1,6 +1,7 @@
 package model.logic;
 
 import java.io.BufferedReader;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -13,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Scanner;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -47,17 +49,17 @@ public class Modelo
 	 * Pila que guarda la información de las estaciones de policía.
 	 */
 	private MaxHeap<EstacionPolicia> estaciones;
-	
+
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
 	 */
-	private UndirectedGraph<Integer, double[]> grafoFD = null;
+	private UndirectedGraph<Comparendo, String, Double> grafoFD = null;
 
 	/**
 	 * Grafo cargado a partir de un archivo JSON.
 	 */
-	private UndirectedGraph<Integer, double[]> grafoJS = null;
-	
+	private UndirectedGraph<Comparendo, String, Double> grafoJS = null;
+
 	/**
 	 * Constructor del modelo del mundo.
 	 */
@@ -65,7 +67,7 @@ public class Modelo
 	{
 		estaciones = new MaxHeap<>( 21 );
 	}
-	
+
 	/**
 	 * Carga los datos de las estaciones de policía en un heap de prioridad.
 	 * @param rutaArchivo Ruta del archivo donde se encuentran las estaciones de
@@ -120,15 +122,23 @@ public class Modelo
 	 */
 	public String cargarGrafoFuentesDeDatos( String rutaArchivoVertices, String rutaArchivoArcos ) throws IOException
 	{
+		// Se lee todo el archivo para ver cuántos vertices se necesitan.
+		Scanner sc = new Scanner( new File( rutaArchivoVertices ) );
+		int numberOfVertices = 0;
+		while( sc.hasNextLine( ) )
+		{
+			numberOfVertices++;
+			sc.nextLine( );
+		}
+		sc.close( );
+
 		// LECTURA DE VERTICES.
 		BufferedReader reader = new BufferedReader( new FileReader( rutaArchivoVertices ) );
 		String vertice = reader.readLine( );
-		
-		int N = 31;
-		grafoFD = new UndirectedGraph<>( N );
 
-		String[] info = new String[2];
-		double[] infod;
+		grafoFD = new UndirectedGraph<>( numberOfVertices );
+
+		String info;
 		int id;
 		while( vertice != null )
 		{
@@ -136,42 +146,48 @@ public class Modelo
 
 			// Se quita el id de la línea y se queda con la latitud y longitud concatenadas
 			// con ",".
-			info = vertice.replaceFirst( id + ",", "" ).split( "," );
-			infod = new double[] { Double.parseDouble( info[0] ), Double.parseDouble( info[1] ) };
+			info = vertice.replaceFirst( id + ",", "" );
 
 			// Se añade el vértice.
-			grafoFD.addVertex( id, infod );
+			grafoFD.setVertexInfo( id, info );
 			vertice = reader.readLine( );
 		}
 
 		reader.close( );
-		
+
 		// LECTURA DE ARCOS.
 		reader = new BufferedReader( new FileReader( rutaArchivoArcos ) );
 		String arco = reader.readLine( );
-		
+
 		String[] linea;
-		double[] infoAdyacente, infoVertice;
+		String infoAdyacente, infoVertice;
 		int idAdyacente;
-		double costo;
+		double costo, latitud, longitud, latitudAdyacente, longitudAdyacente;
 		while( arco != null )
 		{
-			linea = arco.split( " " );
-
-			// Solo aparece el id del vértice y ninguno adyacente.
-			if( linea.length > 1 )
+			if( !arco.startsWith( "#" ) )
 			{
-				id = Integer.parseInt( linea[0] );
-				infoVertice = grafoFD.getInfoVertex( id );
+				linea = arco.split( " " );
 
-				for( int i = 1; i < linea.length; i++ )
+				// Solo aparece el id del vértice y ninguno adyacente.
+				if( linea.length > 1 )
 				{
-					idAdyacente = Integer.parseInt( linea[i] );
-					infoAdyacente = grafoFD.getInfoVertex( idAdyacente );
-					costo = Haversine.distance( infoVertice[1], infoVertice[0], infoAdyacente[1], infoAdyacente[0] );
+					id = Integer.parseInt( linea[0] );
+					infoVertice = grafoFD.getVertexInfo( id );
+					longitud = Double.parseDouble( infoVertice.split( "," )[0] );
+					latitud = Double.parseDouble( infoVertice.split( "," )[1] );
 
-					// Se añade el arco.
-					grafoFD.addEdge( id, idAdyacente, costo );
+					for( int i = 1; i < linea.length; i++ )
+					{
+						idAdyacente = Integer.parseInt( linea[i] );
+						infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
+						longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
+						latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
+						costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
+
+						// Se añade el arco.
+						grafoFD.addEdge( id, idAdyacente, costo );
+					}
 				}
 			}
 			arco = reader.readLine( );
@@ -179,15 +195,14 @@ public class Modelo
 
 		reader.close( );
 
-		String reporte = "\nCantidad de vertices: " + grafoFD.V( ) + "\n";
-		reporte += "Cantidad de arcos: " + grafoFD.E( ) + "\n";
-		return reporte;
+		return darReporteGrafo( grafoFD );
 	}
 
 	/**
 	 * Construye un archivo JSON que contiene la información del grafo.
 	 * @param rutaArchivo Archivo donde guardar el archivo JSON.
-	 * @throws FileNotFoundException En caso que haya un problema creando el archivo.
+	 * @throws FileNotFoundException En caso que haya un problema creando el
+	 *                               archivo.
 	 */
 	public void construirJSONDelGrafo( String rutaArchivo ) throws FileNotFoundException
 	{
@@ -198,15 +213,17 @@ public class Modelo
 		w.println( "\t" + "\"vertices\": [" );
 
 		int i = 0, idAdyacente;
-		double[] infoVertice;
-		while( i < grafoFD.V( ) )
+		String infoVertice;
+		String latitud, longitud;
+		while( i < grafoFD.numberOfVertices( ) )
 		{
 			w.println( "\t\t" + "{" );
-			infoVertice = grafoFD.getInfoVertex( i );
+			infoVertice = grafoFD.getVertexInfo( i );
+			longitud = infoVertice.split( "," )[0];
+			latitud = infoVertice.split( "," )[1];
 			w.println( "\t\t\t" + "\"id\": " + i + "," );
 			w.print( "\t\t\t" + "\"coordenadas\": [" );
-			w.print( infoVertice[0] + ", " );
-			w.println( infoVertice[1] + "]," );
+			w.println( longitud + "," + latitud + "]," );
 			w.println( "\t\t\t" + "\"adyacencias\": [" );
 
 			Iterator<Integer> iter = grafoFD.adj( i ).iterator( );
@@ -215,7 +232,7 @@ public class Modelo
 				w.println( "\t\t\t\t" + "{" );
 				idAdyacente = iter.next( );
 				w.println( "\t\t\t\t\t" + "\"id\": " + idAdyacente + "," );
-				w.println( "\t\t\t\t\t" + "\"costo\": " + grafoFD.getCostArc( i, idAdyacente ) );
+				w.println( "\t\t\t\t\t" + "\"costo\": " + grafoFD.getEdgeCost( i, idAdyacente ) );
 
 				boolean tieneSiguiente = iter.hasNext( );
 				if( tieneSiguiente )
@@ -226,7 +243,7 @@ public class Modelo
 			w.println( "\t\t\t" + "]" );
 			i++;
 
-			if( i < grafoFD.V( ) )
+			if( i < grafoFD.numberOfVertices( ) )
 				w.println( "\t\t" + "}," );
 			else
 				w.println( "\t\t" + "}" );
@@ -239,14 +256,15 @@ public class Modelo
 
 	/**
 	 * Carga el grafo a partir de un archivo JSON.
-	 * @param rutaArchivo Archivo JSON de donde sacar la información del grafo. rutaArchivo != "", != null
+	 * @param rutaArchivo Archivo JSON de donde sacar la información del grafo.
+	 *                    rutaArchivo != "", != null
 	 * @return Cadena con la cantidad de vertices y arcos creados como reporte.
 	 * @throws FileNotFoundException En caso que no se encuentre el archivo JSON.
 	 */
 	public String cargarGrafoDeJSON( String rutaArchivo ) throws FileNotFoundException
 	{
-		grafoJS = new UndirectedGraph<>( grafoFD.V( ) );
-		
+		grafoJS = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
+
 		Gson parser = new Gson( );
 		JsonObject element = null;
 		Reader file = null;
@@ -256,25 +274,24 @@ public class Modelo
 
 		JsonArray dataAsJSONArray = element.get( "vertices" ).getAsJsonArray( );
 		int id, idAdyacente;
-		double[] coord; double costo;
+		double[] coord;
+		double costo;
 		for( JsonElement vertice : dataAsJSONArray )
 		{
 			id = vertice.getAsJsonObject( ).get( "id" ).getAsInt( );
 			coord = transformarJsonArray( vertice.getAsJsonObject( ).get( "coordenadas" ).getAsJsonArray( ) );
-			grafoJS.addVertex( id, coord );
+			grafoJS.setVertexInfo( id, coord[0] + "," + coord[1] );
+
 			for( JsonElement adyacencia : vertice.getAsJsonObject( ).get( "adyacencias" ).getAsJsonArray( ) )
 			{
 				idAdyacente = adyacencia.getAsJsonObject( ).get( "id" ).getAsInt( );
 				costo = adyacencia.getAsJsonObject( ).get( "costo" ).getAsDouble( );
-				
-				if( !grafoJS.existeArco( id, idAdyacente ) )
-					grafoJS.addEdge( id, idAdyacente, costo );
+
+				grafoJS.addEdge( id, idAdyacente, costo );
 			}
 		}
 
-		String reporte = "\nCantidad de vertices: " + grafoJS.V( ) + "\n";
-		reporte += "Cantidad de arcos: " + grafoJS.E( ) + "\n";		
-		return reporte;
+		return darReporteGrafo( grafoJS );
 	}
 
 	/**
@@ -292,7 +309,7 @@ public class Modelo
 		// Principio del archivo HTML.
 		String apertura = leerArchivo( APERTURA_HTML );
 		w.append( apertura + "\n" );
-		
+
 		// Principio del script.
 		apertura = leerArchivo( APERTURA_SCRIPT );
 		apertura = apertura.replace( "VALOR_ZOOM", VALOR_ZOOM );
@@ -314,11 +331,11 @@ public class Modelo
 
 		// Se itera sobre los vertices.
 		int i = 0, idAdyacente;
-		while( i < grafoFD.V( ) )
+		while( i < grafoFD.numberOfVertices( ) )
 		{
-			double[] infoVertice = grafoFD.getInfoVertex( i );
-			latitud = String.valueOf( infoVertice[1] );
-			longitud = String.valueOf( infoVertice[0] );
+			String infoVertice = grafoFD.getVertexInfo( i );
+			latitud = infoVertice.split( "," )[1];
+			longitud = infoVertice.split( "," )[0];
 			remplazoLatitud = new String[] { "LATITUD", latitud };
 			remplazoLongitud = new String[] { "LONGITUD", longitud };
 			remplazos = new ArrayList<String[]>( );
@@ -333,8 +350,8 @@ public class Modelo
 			while( iter.hasNext( ) )
 			{
 				idAdyacente = iter.next( );
-				latitudAdyacente = String.valueOf( grafoFD.getInfoVertex( idAdyacente )[1] );
-				longitudAdyacente = String.valueOf( grafoFD.getInfoVertex( idAdyacente )[0] );
+				latitudAdyacente = String.valueOf( grafoFD.getVertexInfo( idAdyacente ).split( "," )[1] );
+				longitudAdyacente = String.valueOf( grafoFD.getVertexInfo( idAdyacente ).split( "," )[0] );
 
 				remplazos = new ArrayList<String[]>( );
 				remplazoLatitud = new String[] { "LATITUD_INICIO", latitud };
@@ -357,15 +374,15 @@ public class Modelo
 		String cierre = leerArchivo( CIERRE_SCRIPT );
 
 		w.append( cierre + "\n" );
-		
+
 		// Final del archivo HTML.
 		cierre = leerArchivo( CIERRE_HTML );
 		w.append( cierre + "\n" );
 		w.close( );
 
 		// Se muestra el archivo HTML en el navegador.
-		f = new File( "./data/grafo.html" );
-		java.awt.Desktop.getDesktop( ).browse( f.toURI() );
+		f = new File( "data/grafo.html" );
+		java.awt.Desktop.getDesktop( ).browse( f.toURI( ) );
 	}
 
 	/**
@@ -409,13 +426,16 @@ public class Modelo
 	}
 
 	/**
-	 * @return Cantidad de vertices y arcos creados.
+	 * @return Cantidad de vertices y arcos creados. Se divide la cantidad de arcos
+	 *         sobre 2 pues en la tabla de hash se repiten las llaves como v-w y
+	 *         w-v de forma que de cualquier forma se pueda acceder al costo de
+	 *         cierto arco.
 	 */
-	public String darReporteGrafo( )
+	public String darReporteGrafo( @SuppressWarnings( "rawtypes" ) UndirectedGraph grafo )
 	{
 		String informacion = "";
-		informacion += "Cantidad de vertices creados: " + grafoFD.V( ) + "\n";
-		informacion += "Cantidad de arcos creados: " + grafoFD.E( ) + "\n";
+		informacion += "Cantidad de vertices creados: " + grafo.numberOfVertices( ) + "\n";
+		informacion += "Cantidad de arcos creados: " + ( int ) ( grafo.numberOfEdges( ) / 2 ) + "\n";
 		return informacion;
 	}
 
