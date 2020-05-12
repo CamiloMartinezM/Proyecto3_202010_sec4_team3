@@ -1,0 +1,10 @@
+  circle = new google.maps.Circle({
+    strokeColor: '#FF0000',
+    strokeOpacity: 0.6,
+    strokeWeight: 1,
+    fillColor: '#FF0000',
+    fillOpacity: 0.35,
+    map: map,
+    center: {lat: LATITUD, lng: LONGITUD},
+    radius: VALOR_RADIO
+  });
