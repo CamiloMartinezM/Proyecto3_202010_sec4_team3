@@ -17,6 +17,7 @@ public class Controller
 	/**
 	 * Constantes que tienen los nombres de los archivos necesarios.
 	 */
+	private final static String ARCHIVO_COMPARENDOS = "./data/Comparendos_DEI_2018_Bogotá_D.C.geojson";
 	private final static String ARCHIVO_VERTICES = "./data/bogota_vertices.txt";
 	private final static String ARCHIVO_ARCOS = "./data/bogota_arcos.txt";
 	private final static String ARCHIVO_JSON = "./data/grafo_en_json.json";
@@ -52,6 +53,20 @@ public class Controller
 			int option = lector.nextInt( );
 			switch( option )
 			{
+				case 0:
+					view.printJump( );
+					try
+					{
+						modelo.cargarComparendos( ARCHIVO_COMPARENDOS );
+						view.printMessage( "\n¡Los comparendos fueron cargados exitosamente!\n" );
+					}
+					catch( IOException e3 )
+					{
+						System.out.println( "\nHubo un problema cargando el archivo.\n" );
+						e3.printStackTrace( );
+					}
+					break;
+
 				case 1:
 					view.printJump( );
 					try
@@ -114,14 +129,16 @@ public class Controller
 						view.printMessage( "No se encontró ningún archivo de estaciones de policía." );
 					}
 
-					boolean cargaExitosa = modelo.cargarEstacionesDePolicia( rutaArchivo );
-					if( cargaExitosa )
+					try
 					{
+						modelo.cargarEstacionesDePolicia( rutaArchivo );
 						view.printMessage( "\n¡La carga de las estaciones de policía fue exitosa!\n" );
 						view.printMessage( modelo.darInformacionEstaciones( ) );
 					}
-					else
+					catch( IOException e1 )
+					{
 						view.printMessage( "Hubo un problema leyendo el archivo de estaciones de policía." );
+					}
 					break;
 				
 				case 5:

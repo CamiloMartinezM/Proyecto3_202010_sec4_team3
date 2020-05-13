@@ -228,16 +228,16 @@ public class MaxHeap<T extends Comparable<T>>
 	{
 		while( true )
 		{
-			int left = 2 * k + 1;
-			int right = 2 * k + 2;
-			int smallest = left;
+			int left = 2 * k + 1; 
+			int right = 2 * k + 2; 
+			int smallest = left; 
 
 			if( right < heapSize && less( right, left ) )
 				smallest = right;
 
 			if( left >= heapSize || less( k, smallest ) )
 				break;
-
+			
 			exch( smallest, k );
 			k = smallest;
 		}

@@ -1,14 +1,15 @@
 package model.logic;
 
 import java.io.BufferedReader;
-
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,12 +17,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data_structures.MaxHeap;
+import model.data_structures.MaxQueue;
 import model.data_structures.UndirectedGraph;
 
 /**
@@ -30,6 +32,16 @@ import model.data_structures.UndirectedGraph;
  */
 public class Modelo
 {
+	/**
+	 * Número de estaciones de policía.
+	 */
+	private static final int NUMERO_ESTACIONES_POLICIA = 21;
+
+	/**
+	 * Número de comparendos.
+	 */
+	private static final int NUMERO_COMPARENDOS = 527655;
+
 	/**
 	 * Constantes para la construcción del HTML para pintar el grafo.
 	 */
@@ -46,9 +58,14 @@ public class Modelo
 	private static final String VALOR_RADIO = "25";
 
 	/**
-	 * Pila que guarda la información de las estaciones de policía.
+	 * Cola de prioridad que guarda la información de las estaciones de policía.
 	 */
-	private MaxHeap<EstacionPolicia> estaciones;
+	private MaxQueue<EstacionPolicia> estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
+
+	/**
+	 * Heap de prioridad que guarda la información de los comparendos.
+	 */
+	private MaxHeap<Comparendo> comparendos = new MaxHeap<>( NUMERO_COMPARENDOS );
 
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
@@ -65,7 +82,40 @@ public class Modelo
 	 */
 	public Modelo( )
 	{
-		estaciones = new MaxHeap<>( 21 );
+	}
+
+	/**
+	 * Carga los datos de los comparendos en una lista enlazada, los cuales se
+	 * encuentran dentro de la ruta del archivo dada por parámetro. <b>post:<\b> La
+	 * lista enlazada queda construída.
+	 * @param rutaArchivo Ruta del archivo donde se encuentran los comparendos.
+	 *                    rutaArchivo != null, rutaArchivo != ""
+	 * @return True si la lista enlazada fue cargada correctamente, false de lo
+	 *         contrario.
+	 * @throws IOException Si hay un problema de lectura del archivo JSON.
+	 */
+	public void cargarComparendos( String rutaArchivo ) throws IOException
+	{
+		InputStream is = new DataInputStream( new FileInputStream( rutaArchivo ) );
+		ObjectMapper mapper = new ObjectMapper( );
+		Comparendo c;
+		
+		// Crea una instancia de JsonParser
+		try( JsonParser jsonParser = mapper.getFactory( ).createParser( is ) )
+		{
+			// Revisa que el primer token sea de inicio de arreglo o [.
+			if( jsonParser.nextToken( ) != JsonToken.START_ARRAY )
+			{
+				throw new IllegalStateException( "Se esperaba el comienzo de un arreglo." );
+			}
+
+			// Itera los tokens hasta llegar al final del arreglo o ].
+			while( jsonParser.nextToken( ) != JsonToken.END_ARRAY )
+			{
+				c = mapper.readValue( jsonParser, Comparendo.class );
+				comparendos.insert( c ); // Inserta el comparendo deserializado en el heap de prioridad.
+			}
+		}
 	}
 
 	/**
@@ -73,41 +123,23 @@ public class Modelo
 	 * @param rutaArchivo Ruta del archivo donde se encuentran las estaciones de
 	 *                    policía. rutaArchivo != null, rutaArchivo != ""
 	 * @return True si la pila fue cargada correctamente, false de lo contrario.
+	 * @throws IOException Si hay un problema de lectura en el archivo JSON.
 	 */
-	public boolean cargarEstacionesDePolicia( String rutaArchivo )
+	public void cargarEstacionesDePolicia( String rutaArchivo ) throws IOException
 	{
-		Gson parser = new Gson( );
-		JsonObject element = null;
-		Reader file = null;
-
-		try
+		ObjectMapper mapper = new ObjectMapper( );
+		
+		estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
+		
+		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
+		JsonNode n = mapper.readTree( jsonData );
+		Iterator<JsonNode> d = n.get( "features" ).elements( );
+		while( d.hasNext( ) )
 		{
-			file = new FileReader( rutaArchivo );
-			element = parser.fromJson( file, JsonObject.class );
-		}
-		catch( Exception e )
-		{
-			return false;
-		}
-
-		JsonArray dataAsJSONArray = element.get( "features" ).getAsJsonArray( );
-		String id;
-		double latitud, longitud;
-		JsonObject actualProperties;
-		EstacionPolicia e;
-		for( JsonElement dataActual : dataAsJSONArray )
-		{
-			actualProperties = dataActual.getAsJsonObject( ).get( "properties" ).getAsJsonObject( );
-
-			id = actualProperties.get( "OBJECTID" ).getAsString( );
-			latitud = actualProperties.get( "EPOLATITUD" ).getAsDouble( );
-			longitud = actualProperties.get( "EPOLONGITU" ).getAsDouble( );
-
-			e = new EstacionPolicia( id, latitud, longitud );
+			JsonNode i = d.next( ).get( "properties" );
+			EstacionPolicia e = mapper.treeToValue( i, EstacionPolicia.class );
 			estaciones.insert( e );
 		}
-
-		return true;
 	}
 
 	/**
@@ -259,33 +291,32 @@ public class Modelo
 	 * @param rutaArchivo Archivo JSON de donde sacar la información del grafo.
 	 *                    rutaArchivo != "", != null
 	 * @return Cadena con la cantidad de vertices y arcos creados como reporte.
-	 * @throws FileNotFoundException En caso que no se encuentre el archivo JSON.
+	 * @throws IOException Si hay un problema de lectura en el archivo JSON.
 	 */
-	public String cargarGrafoDeJSON( String rutaArchivo ) throws FileNotFoundException
+	public String cargarGrafoDeJSON( String rutaArchivo ) throws IOException
 	{
+		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
+
 		grafoJS = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
 
-		Gson parser = new Gson( );
-		JsonObject element = null;
-		Reader file = null;
-
-		file = new FileReader( rutaArchivo );
-		element = parser.fromJson( file, JsonObject.class );
-
-		JsonArray dataAsJSONArray = element.get( "vertices" ).getAsJsonArray( );
 		int id, idAdyacente;
 		double[] coord;
 		double costo;
-		for( JsonElement vertice : dataAsJSONArray )
+
+		ObjectMapper mapper = new ObjectMapper( );
+		JsonNode n = mapper.readTree( jsonData ), vertice;
+		Iterator<JsonNode> d = n.get( "vertices" ).elements( );
+		while( d.hasNext( ) )
 		{
-			id = vertice.getAsJsonObject( ).get( "id" ).getAsInt( );
-			coord = transformarJsonArray( vertice.getAsJsonObject( ).get( "coordenadas" ).getAsJsonArray( ) );
+			vertice = d.next( );
+			id = vertice.get( "id" ).asInt( );
+			coord = DeserializadorJSON.transformarJsonArray( vertice.get( "coordenadas" ) );
 			grafoJS.setVertexInfo( id, coord[0] + "," + coord[1] );
 
-			for( JsonElement adyacencia : vertice.getAsJsonObject( ).get( "adyacencias" ).getAsJsonArray( ) )
+			for( JsonNode adyacencia : vertice.get( "adyacencias" ) )
 			{
-				idAdyacente = adyacencia.getAsJsonObject( ).get( "id" ).getAsInt( );
-				costo = adyacencia.getAsJsonObject( ).get( "costo" ).getAsDouble( );
+				idAdyacente = adyacencia.get( "id" ).asInt( );
+				costo = adyacencia.get( "costo" ).asDouble( );
 
 				grafoJS.addEdge( id, idAdyacente, costo );
 			}
@@ -433,25 +464,10 @@ public class Modelo
 	 */
 	public String darReporteGrafo( @SuppressWarnings( "rawtypes" ) UndirectedGraph grafo )
 	{
-		String informacion = "";
+		String informacion = "\n";
 		informacion += "Cantidad de vertices creados: " + grafo.numberOfVertices( ) + "\n";
 		informacion += "Cantidad de arcos creados: " + ( int ) ( grafo.numberOfEdges( ) / 2 ) + "\n";
 		return informacion;
-	}
-
-	/**
-	 * Transforma un JsonArray a un double array.
-	 * @param jsonArray Arreglo a transformar.
-	 * @return Float Array.
-	 */
-	private double[] transformarJsonArray( JsonArray jsonArray )
-	{
-		double[] fData = new double[jsonArray.size( )];
-
-		for( int i = 0; i < jsonArray.size( ); i++ )
-			fData[i] = Double.parseDouble( jsonArray.get( i ).getAsString( ) );
-
-		return fData;
 	}
 
 	/**
