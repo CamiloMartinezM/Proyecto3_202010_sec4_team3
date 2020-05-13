@@ -2,38 +2,45 @@ package model.logic;
 
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 /**
  * Clase que maneja la información de una estación de policía.
  * @author Camilo Martínez & Nicolás Quintero
  */
+@JsonIgnoreProperties( ignoreUnknown = true )
 public class EstacionPolicia implements Comparable<EstacionPolicia>
 {
+	@JsonInclude( JsonInclude.Include.NON_NULL )
+	@JsonPropertyOrder( { "OBJECTID", "EPOCOD_PLAN", "EPOCOD_ENT", "EPOCOD_PROY", "EPOANIO_GEO", "EPOFECHA_INI",
+			"EPOFECHA_FIN", "EPODESCRIP", "EPOEST_PROY", "EPOINTERV_ESP", "EPODIR_SITIO", "EPOCOD_SITIO", "EPOLATITUD",
+			"EPOLONGITU", "EPOSERVICIO", "EPOHORARIO", "EPOTELEFON", "EPOCELECTR", "EPOCONTACT", "EPOPWEB",
+			"EPOIUUPLAN", "EPOIUSCATA", "EPOIULOCAL", "EPOEASOCIA", "EPOFUNCION", "EPOTEQUIPA", "EPONOMBRE",
+			"EPOIDENTIF", "EPOFECHA_C" } )
+
 	/**
 	 * Identificador único de la estación. OBJECT_ID
 	 */
+	@JsonProperty( "OBJECTID" )
 	private String id;
 
 	/**
 	 * Coordenadas; la longitud y latitud geográficas.
 	 */
-	private double latitud, longitud;
+	@JsonProperty( "EPOLATITUD" )
+	private double latitud;
 
-	/**
-	 * Inicializa una estación con la información dada por parámetro.
-	 * @param id       Identificador único de la estación.
-	 * @param latitud  Latitud de la estación.
-	 * @param longitud Longitud de la estación.
-	 */
-	public EstacionPolicia( String id, double latitud, double longitud )
-	{
-		this.id = id;
-		this.latitud = latitud;
-		this.longitud = longitud;
-	}
+	@JsonProperty( "EPOLONGITU" )
+	private double longitud;
 
 	/**
 	 * @return Identificador único de la estación.
 	 */
+	@JsonProperty( "OBJECTID" )
 	public String darId( )
 	{
 		return id;
@@ -42,6 +49,7 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 	/**
 	 * @return Longitud de la estación.
 	 */
+	@JsonProperty( "EPOLONGITU" )
 	public double darLongitud( )
 	{
 		return longitud;
@@ -50,6 +58,7 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 	/**
 	 * @return Latitud de la estación.
 	 */
+	@JsonProperty( "EPOLATITUD" )
 	public double darLatitud( )
 	{
 		return latitud;
@@ -61,6 +70,7 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 	 *                atributo de la estación de policía.
 	 * @return Cadena con la información pedida de la estación de policía.
 	 */
+	@JsonIgnore
 	public String consultarInformacion( boolean[] mostrar )
 	{
 		String cadena = "";
@@ -77,6 +87,7 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 	}
 
 	@Override
+	@JsonIgnore
 	public int compareTo( EstacionPolicia o )
 	{
 		return this.id.compareTo( o.darId( ) );

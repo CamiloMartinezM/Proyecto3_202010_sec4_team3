@@ -2,16 +2,19 @@ package model.logic;
 
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 /**
  * Clase que maneja la información de un comparendo.
  * @author Camilo Martínez & Nicolás Quintero
  */
+@JsonDeserialize(using = DeserializadorJSON.class)
 public class Comparendo implements Comparable<Comparendo>
 {
 	/**
 	 * Identificador único del comparendo. OBJECTID.
 	 */
-	private String id;
+	private int id;
 
 	/**
 	 * Fecha del comparendo. FECHA_HORA.
@@ -51,7 +54,7 @@ public class Comparendo implements Comparable<Comparendo>
 	/**
 	 * Coordenada, donde está la longitud y latitud geográficas.
 	 */
-	private float[] coordenada;
+	private double[] coordenada;
 
 	/**
 	 * Inicializa un comparendo con la información dada por parámetro.
@@ -65,10 +68,12 @@ public class Comparendo implements Comparable<Comparendo>
 	 * @param codigoInfraccion      Código de la infracción cometida.
 	 * @param descripcionInfraccion Descripción de la infracción cometida.
 	 * @param localidad             Localidad en la ciudad del comparendo.
-	 * @param coordenada            Coordenada donde ocurrió la infracción.
+	 * @param coordenada            Coordenada donde ocurrió la infracción. La
+	 *                              primera posición corresponde a la longitud, la
+	 *                              segunda a la latitud.
 	 */
-	public Comparendo( String id, String fecha, String medioDetencion, String claseVehiculo, String tipoServicio,
-			String codigoInfraccion, String causaInfraccion, String localidad, float[] coordenada )
+	public Comparendo( int id, String fecha, String medioDetencion, String claseVehiculo, String tipoServicio,
+			String codigoInfraccion, String causaInfraccion, String localidad, double[] coordenada )
 	{
 		this.id = id;
 		this.fecha = fecha;
@@ -84,7 +89,7 @@ public class Comparendo implements Comparable<Comparendo>
 	/**
 	 * @return Identificador único del comparendo.
 	 */
-	public String darId( )
+	public int darId( )
 	{
 		return id;
 	}
@@ -93,7 +98,7 @@ public class Comparendo implements Comparable<Comparendo>
 	 * Cambia el identificador único actual por uno nuevo dado por parámetro.
 	 * @param id Nuevo ID.
 	 */
-	public void cambiarId( String id )
+	public void cambiarId( int id )
 	{
 		this.id = id;
 	}
@@ -220,7 +225,7 @@ public class Comparendo implements Comparable<Comparendo>
 	/**
 	 * @return Longitud de la infracción.
 	 */
-	public float darLongitud( )
+	public double darLongitud( )
 	{
 		return coordenada[0];
 	}
@@ -228,7 +233,7 @@ public class Comparendo implements Comparable<Comparendo>
 	/**
 	 * @return Latitud de la infracción.
 	 */
-	public float darLatitud( )
+	public double darLatitud( )
 	{
 		return coordenada[1];
 	}
@@ -237,7 +242,7 @@ public class Comparendo implements Comparable<Comparendo>
 	 * Cambia la coordenada actual por una nueva dada por parámetro.
 	 * @param coordenada Coordenada nueva.
 	 */
-	public void cambiarCoordenada( float[] coordenada )
+	public void cambiarCoordenada( double[] coordenada )
 	{
 		this.coordenada = coordenada;
 	}
@@ -265,13 +270,18 @@ public class Comparendo implements Comparable<Comparendo>
 		for( int i = 0; i < informacion.size( ); i++ )
 			if( mostrar[i] )
 				cadena += "\t" + informacion.get( i ) + "\n";
-		
+
 		return cadena;
 	}
 
 	@Override
 	public int compareTo( Comparendo o )
 	{
-		return this.id.compareTo( o.darId( ) );
+		if( this.id < o.darId( ) )
+			return -1;
+		else if( this.id > o.darId( ) )
+			return 1;
+		else
+			return 0;
 	}
 }

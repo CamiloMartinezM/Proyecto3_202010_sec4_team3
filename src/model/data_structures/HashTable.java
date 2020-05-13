@@ -54,6 +54,15 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>> impleme
 
 	/**
 	 * Inicializa una tabla de hash de encadenamiento separado de capacidad
+	 * predeterminada y permite decidir si remplazar o no valores con llave igual.
+	 */
+	public HashTable( boolean replaceValue )
+	{
+		this( M, replaceValue );
+	}
+
+	/**
+	 * Inicializa una tabla de hash de encadenamiento separado de capacidad
 	 * dada por parámetro.
 	 * @param capacity Capacidad deseada.
 	 */
@@ -76,7 +85,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>> impleme
 		maxKey = null;
 		this.replaceValue = replaceValue;
 	}
-	
+
 	/**
 	 * @return Tamaño de la tabla de hash.
 	 */
@@ -416,14 +425,14 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>> impleme
 	}
 
 	/**
-	 * @param key Llave cuyos valores serán iterados. 
+	 * @param key Llave cuyos valores serán iterados.
 	 * @return Iterador sobre todos los valores de una cierta llave.
 	 */
 	public Iterator<V> valuesOf( K key )
 	{
 		if( !contains( key ) ) // Si la llave no existe, se retorna un iterador vacío.
 			return Collections.emptyIterator( );
-		
+
 		return containingNode( key ).getListOfItems( ).iterator( );
 	}
 }

@@ -19,6 +19,7 @@ public class View
 	 */
 	public void printMenu( )
 	{
+		System.out.println( "0. Cargar comparendos de la malla vial de Bogotá para el periodo 2018." );
 		System.out.println( "1. Cargar grafo no dirigido a partir de las fuentes de datos." );
 		System.out.println( "2. Guardar grafo no dirigido en un archivo persistido." );
 		System.out.println( "3. Cargar grafo persistido." );
