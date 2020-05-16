@@ -20,7 +20,7 @@ public class TestUndirectedGraph
 	 */
 	public final int V = 40;
 
-	private UndirectedGraph<Integer, String, Double> grafo;
+	private UndirectedGraph<Integer, Double, String, Double> grafo;
 
 	/**
 	 * Inicializa un grafo vacío.
@@ -101,7 +101,6 @@ public class TestUndirectedGraph
 
 		assertEquals( "No agregó correctamente los arcos.", 2, grafo.numberOfEdges( ) );
 		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeCost( 1, 0 ).doubleValue( ) + "" );
-		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeCost( 0, 1 ).doubleValue( ) + "" );
 	}
 
 	@Test

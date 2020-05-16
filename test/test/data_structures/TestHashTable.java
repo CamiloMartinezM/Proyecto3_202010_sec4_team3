@@ -20,7 +20,7 @@ public class TestHashTable
 	/**
 	 * Tabla de hash.
 	 */
-	private HashTable<String, Integer> table;
+	private HashTable<String, Integer, Integer> table;
 
 	/**
 	 * Arreglo de strings que contiene las llaves y valores ingresados. Se usan para
@@ -40,7 +40,7 @@ public class TestHashTable
 	@Before
 	public void setUp1( )
 	{
-		table = new HashTable<String, Integer>( 97 );
+		table = new HashTable<>( 97 );
 	}
 
 	/**

@@ -1,8 +1,6 @@
-var marker;
-var circle;
-
 function initMap() {
-  var map = new google.maps.Map(document.getElementById('map'), {
-    zoom: VALOR_ZOOM,
-    center: {lat: LATITUD, lng: LONGITUD}
-  });
+var map = new google.maps.Map(document.getElementById('map'), {
+zoom: VALOR_ZOOM,
+center: {lat:LATITUD, lng:LONGITUD},
+mapTypeId: 'terrain'
+});

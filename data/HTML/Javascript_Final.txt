@@ -1,6 +1,5 @@
-    </script>
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBocI8qPwd4tXjDeKYYg1Ua8-SYgdJndJs&callback=initMap">
-    </script>
-  </body>
+</script> 
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBocI8qPwd4tXjDeKYYg1Ua8-SYgdJndJs&callback=initMap" 
+async defer></script>
+</body>
 </html>

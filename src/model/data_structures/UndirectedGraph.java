@@ -9,9 +9,11 @@ import java.util.Iterator;
  * @param <I> Tipo de información que distingue un vertice de otro
  *            cualitativamente.
  * @param <C> Tipo de costo que tiene un arco entre vertices.
+ * @param <L> Tipo de elemento distintivo dentro de los nodos de las tablas de
+ *            hash.
  */
 @SuppressWarnings( "unchecked" )
-public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C extends Comparable<C>>
+public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I extends Comparable<I>, C extends Comparable<C>>
 		implements IGraph<V, I, C>
 {
 	/**
@@ -25,28 +27,39 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	private int E;
 
 	/**
+	 * Number of items stored.
+	 */
+	private int S;
+	
+	/**
+	 * Number of distinctive items stored.
+	 */
+	private int D;
+
+	/**
 	 * Adjacency list.
 	 */
 	private Bag<Integer>[] adj;
 
 	/**
-	 * Tabla de hash que contiene los items de cada vertice. La llave es el id
+	 * Tabla de hash que contiene los items de tipo V de cada vertice. La llave es
+	 * el id
 	 * del vertice y el valor su item.
 	 */
-	private HashTable<Integer, V> vertexItems;
+	private HashTable<Integer, V, L> vertexItems;
 
 	/**
 	 * Tabla de hash que contiene la información de cada vertice. La llave es el id
 	 * del vertice y el valor es la información cualitativa de dicho vertice.
 	 */
-	private HashTable<Integer, I> vertexInfo;
+	private HashTable<Integer, I, L> vertexInfo;
 
 	/**
 	 * Tabla de hash que contiene el costo de los arcos. La llave es la
 	 * concatenación de los id's de los vertices con "-" separándolos y el valor el
 	 * costo asociado.
 	 */
-	public HashTable<String, C> costs;
+	public HashTable<String, C, L> costs;
 
 	/**
 	 * Initializes an empty graph with the number of vertices given in parameters
@@ -61,7 +74,9 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 			throw new IllegalArgumentException( "Number of vertices must be nonnegative" );
 		this.V = numberOfVertices;
 		this.E = 0;
-
+		this.D = 0;
+		this.S = 0;
+		
 		// Se usa true, pues se quiere que se remplace el valor si la
 		// misma llave es proporcionada al pretender insertar.
 		this.vertexInfo = new HashTable<>( 997, true );
@@ -74,14 +89,36 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 			adj[v] = new Bag<Integer>( );
 	}
 
+	/**
+	 * @return Número de vertices en el grafo.
+	 */
 	public int numberOfVertices( )
 	{
 		return V;
 	}
 
+	/**
+	 * @return Número de arcos en el grafo.
+	 */
 	public int numberOfEdges( )
 	{
 		return E;
+	}
+
+	/**
+	 * @return Total de items guardados en vertices.
+	 */
+	public int numberOfStoredItems( )
+	{
+		return S;
+	}
+
+	/**
+	 * @return Total de items distintivos guardados en vertices.
+	 */
+	public int numberOfStoredDistinctiveItems( )
+	{
+		return D;
 	}
 
 	/**
@@ -94,14 +131,13 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	{
 		validateVertex( v );
 		validateVertex( w );
-		if( ! ( costs.contains( v + "-" + w ) && costs.contains( w + "-" + v ) ) ) // Si no existe ya ese arco.
+		if( ! ( costs.contains( v + "-" + w ) || costs.contains( w + "-" + v ) ) ) // Si no existe ya ese arco.
 		{
 			E++;
 			adj[v].add( w );
 			adj[w].add( v );
 		}
 		costs.put( v + "-" + w, cost );
-		costs.put( w + "-" + v, cost );
 	}
 
 	/**
@@ -113,18 +149,6 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	{
 		validateVertex( v );
 		return costs.get( v + "-" + w );
-	}
-
-	/**
-	 * Returns the vertices adjacent to the given vertex.
-	 * @param v the vertex.
-	 * @return the vertices adjacent to given vertex as an iterable.
-	 * @throws IllegalArgumentException if given vertex is not valid.
-	 */
-	public Iterable<Integer> adj( int v )
-	{
-		validateVertex( v );
-		return adj[v];
 	}
 
 	/**
@@ -140,7 +164,8 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	}
 
 	/**
-	 * Le asigna al vertice el item (ambos dados por parámetro). El vertice es
+	 * Le asigna al vertice de id v el item (ambos dados por parámetro). El vertice
+	 * es
 	 * ubicado dentro de la tabla de hash y a dicha llave se le añade el valor que
 	 * corresponde al item.
 	 * @param v    vertice en cuestión.
@@ -149,6 +174,23 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	public void setVertexItem( int v, V item )
 	{
 		vertexItems.put( v, item );
+		
+		if( item != null )
+			S++;
+	}
+
+	/**
+	 * Le asigna al vertice de id v el item (ambos dados por parámetro). El vertice
+	 * es
+	 * ubicado dentro de la tabla de hash y a dicha llave se le añade el valor que
+	 * corresponde al item.
+	 * @param v    vertice en cuestión.
+	 * @param item Nuevo item.
+	 */
+	public void setVertexDistinctiveItem( int v, L item )
+	{
+		vertexItems.putDistinctiveItem( v, item );
+		D++;
 	}
 
 	/**
@@ -173,6 +215,27 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	}
 
 	/**
+	 * @param v id del vertice a buscar su item distintivo.
+	 * @return Item distintivo del vertice dado por parámetro.
+	 */
+	public L getVertexDistinctiveItem( int v )
+	{
+		return vertexItems.getDistinctiveItem( v );
+	}
+
+	/**
+	 * Returns the vertices adjacent to the given vertex.
+	 * @param v the vertex.
+	 * @return the vertices adjacent to given vertex as an iterable.
+	 * @throws IllegalArgumentException if given vertex is not valid.
+	 */
+	public Iterable<Integer> adj( int v )
+	{
+		validateVertex( v );
+		return adj[v];
+	}
+
+	/**
 	 * Iterador sobre todos los items asociados al vertice dado por parámetro.
 	 * @param v id del vertice.
 	 * @return Iterador sobre todos los valores dentro de la tabla de hash con llave
@@ -182,6 +245,50 @@ public class UndirectedGraph<V extends Comparable<V>, I extends Comparable<I>, C
 	{
 		validateVertex( v );
 		return vertexItems.valuesOf( v );
+	}
+
+	/**
+	 * Iterador sobre todos los items distintivos guardados en el grafo.
+	 * @return Iterador de tipo L.
+	 */
+	public Iterator<L> distinctiveItems( )
+	{
+		return new Iterator<L>( )
+		{
+			int i = 0;
+			int j = 0;
+			private L actual = null;
+
+			@Override
+			public boolean hasNext( )
+			{
+				return j < D;
+			}
+
+			@Override
+			public L next( )
+			{
+				actual = null;
+
+				while( i < numberOfVertices( ) && actual == null )
+				{
+					actual = getVertexDistinctiveItem( i );
+					i++;
+				}
+
+				j++;
+				return actual;
+			}
+		};
+	}
+
+	/**
+	 * Iterador sobre todos los arcos existentes.
+	 * @return Iterador sobre todos los arcos v-w existentes.
+	 */
+	public Iterator<String> edges( )
+	{
+		return costs.keys( );
 	}
 
 	/**

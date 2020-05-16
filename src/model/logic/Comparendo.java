@@ -249,7 +249,7 @@ public class Comparendo implements Comparable<Comparendo>
 
 	/**
 	 * Consulta la información del comparendo.
-	 * @param mostrar Arreglo booleano de tamaño 8 que indica si mostrar uno cierto
+	 * @param mostrar Arreglo booleano de tamaño 9 que indica si mostrar uno cierto
 	 *                atributo del comparendo.
 	 * @return Cadena con la información pedida del comparendo.
 	 */

@@ -4,12 +4,12 @@ package model.data_structures;
  * Clase que representa una entrada para la tabla de hash.
  * @author Camilo Martínez & Nicolás Quintero.
  */
-public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode<K, V>>
+public class HashNode<K extends Comparable<K>, V, E> implements Comparable<HashNode<K, V, E>>
 {
 	/**
 	 * Referencia al siguiente nodo. Esta será la lista enlazada primaria.
 	 */
-	private HashNode<K, V> next = null;
+	private HashNode<K, V, E> next = null;
 
 	/**
 	 * Referencia a una lista enlazada secundaria que contiene otros HashNodes con
@@ -17,6 +17,11 @@ public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode
 	 */
 	private LinkedList<V> list = new LinkedList<>( );
 
+	/**
+	 * Item distintivo dentro de tipo E del nodo.
+	 */
+	private E distinctiveItem = null;
+	
 	/**
 	 * Referencia a la llave.
 	 */
@@ -56,7 +61,7 @@ public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode
 	 * @param value Valor del nodo.
 	 * @param next  Nodo posterior del nodo.
 	 */
-	public HashNode( K key, V value, HashNode<K, V> next )
+	public HashNode( K key, V value, HashNode<K, V, E> next )
 	{
 		this.next = next;
 		this.key = key;
@@ -67,7 +72,7 @@ public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode
 	/**
 	 * @return Siguiente nodo en la lista enlazada principal.
 	 */
-	public HashNode<K, V> getNext( )
+	public HashNode<K, V, E> getNext( )
 	{
 		return next;
 	}
@@ -85,7 +90,7 @@ public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode
 	 * dado por parámetro.
 	 * @param nextSecondary Siguiente nodo en la lista enlazada primaria.
 	 */
-	public void setNext( HashNode<K, V> next )
+	public void setNext( HashNode<K, V, E> next )
 	{
 		this.next = next;
 	}
@@ -124,9 +129,26 @@ public class HashNode<K extends Comparable<K>, V> implements Comparable<HashNode
 	{
 		return list.getSize( );
 	}
+	
+	/**
+	 * @return Item distintivo del nodo.
+	 */
+	public E getDistinctiveItem( )
+	{
+		return distinctiveItem;
+	}
+	
+	/**
+	 * Cambia el item distintivo del nodo por uno dado por parámetro.
+	 * @param distinctiveItem Nuevo item distintivo.
+	 */
+	public void setDistinctiveItem( E distinctiveItem )
+	{
+		this.distinctiveItem = distinctiveItem;
+	}
 
 	@Override
-	public int compareTo( HashNode<K, V> o )
+	public int compareTo( HashNode<K, V, E> o )
 	{
 		return this.key.compareTo( o.key );
 	}

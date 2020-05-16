@@ -65,23 +65,73 @@ public class Modelo
 	/**
 	 * Heap de prioridad que guarda la información de los comparendos.
 	 */
-	private MaxHeap<Comparendo> comparendos = new MaxHeap<>( NUMERO_COMPARENDOS );
+	private MaxHeap<Comparendo> comparendos = null;
 
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
 	 */
-	private UndirectedGraph<Comparendo, String, Double> grafoFD = null;
+	private UndirectedGraph<Comparendo, EstacionPolicia, String, Double> grafoFD = null;
 
 	/**
 	 * Grafo cargado a partir de un archivo JSON.
 	 */
-	private UndirectedGraph<Comparendo, String, Double> grafoJS = null;
+	private UndirectedGraph<Comparendo, EstacionPolicia, String, Double> grafoJS = null;
 
 	/**
 	 * Constructor del modelo del mundo.
 	 */
 	public Modelo( )
 	{
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------
+	// CARGA Y CONSTRUCCIÓN DE JSON's
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Carga los comparendos en un heap de prioridad que luego utiliza para meter
+	 * los comparendos dentro del grafo en el respectivo vertice cuya distancia
+	 * haversiana al comparendo sea la más cercana.
+	 * @param rutaArchivo Archivo donde están guardados los comparendos. rutaArchivo
+	 *                    != null, != ""
+	 * @throws IOException Si hubo un problema de lectura del archivo.
+	 */
+	public void cargarComparendosEnGrafo( String rutaArchivo ) throws IOException, IllegalStateException
+	{
+		if( grafoFD != null )
+		{
+			cargarComparendos( rutaArchivo );
+			Comparendo c;
+			int verticeMasCercano;
+			while( !comparendos.isEmpty( ) )
+			{
+				c = comparendos.poll( );
+				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 5 );
+				grafoFD.setVertexItem( verticeMasCercano, c );
+			}
+		}
+	}
+
+	/**
+	 * Carga las estaciones de policía dentro del grafo.
+	 * @param rutaArchivo Archivo donde están guardadas las estaciones de policía.
+	 *                    rutaArchivo != null, != ""
+	 * @throws IOException Si hay un problema de lectura del archivo.
+	 */
+	public void cargarEstacionesEnGrafo( String rutaArchivo ) throws IOException
+	{
+		if( grafoFD != null )
+		{
+			cargarEstacionesDePolicia( rutaArchivo );
+			EstacionPolicia e;
+			int verticeMasCercano;
+			while( !estaciones.isEmpty( ) )
+			{
+				e = estaciones.poll( );
+				verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
+				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
+			}
+		}
 	}
 
 	/**
@@ -96,10 +146,12 @@ public class Modelo
 	 */
 	public void cargarComparendos( String rutaArchivo ) throws IOException
 	{
+		comparendos = new MaxHeap<>( NUMERO_COMPARENDOS );
+
 		InputStream is = new DataInputStream( new FileInputStream( rutaArchivo ) );
 		ObjectMapper mapper = new ObjectMapper( );
 		Comparendo c;
-		
+
 		// Crea una instancia de JsonParser
 		try( JsonParser jsonParser = mapper.getFactory( ).createParser( is ) )
 		{
@@ -128,9 +180,9 @@ public class Modelo
 	public void cargarEstacionesDePolicia( String rutaArchivo ) throws IOException
 	{
 		ObjectMapper mapper = new ObjectMapper( );
-		
+
 		estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
-		
+
 		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		JsonNode n = mapper.readTree( jsonData );
 		Iterator<JsonNode> d = n.get( "features" ).elements( );
@@ -152,7 +204,7 @@ public class Modelo
 	 * @return Cadena con la cantidad de vertices y arcos creados como reporte.
 	 * @throws IOException Si hay un problema en la lectura de los archivos.
 	 */
-	public String cargarGrafoFuentesDeDatos( String rutaArchivoVertices, String rutaArchivoArcos ) throws IOException
+	public void cargarGrafoFuentesDeDatos( String rutaArchivoVertices, String rutaArchivoArcos ) throws IOException
 	{
 		// Se lee todo el archivo para ver cuántos vertices se necesitan.
 		Scanner sc = new Scanner( new File( rutaArchivoVertices ) );
@@ -181,6 +233,7 @@ public class Modelo
 			info = vertice.replaceFirst( id + ",", "" );
 
 			// Se añade el vértice.
+			grafoFD.setVertexItem( id, null );
 			grafoFD.setVertexInfo( id, info );
 			vertice = reader.readLine( );
 		}
@@ -226,8 +279,6 @@ public class Modelo
 		}
 
 		reader.close( );
-
-		return darReporteGrafo( grafoFD );
 	}
 
 	/**
@@ -325,6 +376,171 @@ public class Modelo
 		return darReporteGrafo( grafoJS );
 	}
 
+	// ---------------------------------------------------------------------------------------------------------------------------
+	// ALGORITMOS NECESARIOS
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Retorna el id del vertice más cercano a las coordenadas dadas por parámetro.
+	 * @param latitud  Latitud a buscar más cercana.
+	 * @param longitud Longitud a buscar más cercana.
+	 * @return id del vertice.
+	 */
+	public int darVerticeMasCercanoA( double latitud, double longitud, double error )
+	{
+		if( grafoFD == null )
+		{
+			throw new IllegalStateException( "El grafo no ha sido cargado" );
+		}
+
+		int id = 0;
+		int i = 0;
+		String infoVertice;
+		double latitudA, longitudA, distanciaMenor = 0, distanciaActual;
+		while( i < grafoFD.numberOfVertices( ) )
+		{
+			infoVertice = grafoFD.getVertexInfo( i );
+			longitudA = Double.parseDouble( infoVertice.split( "," )[0] );
+			latitudA = Double.parseDouble( infoVertice.split( "," )[1] );
+			distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
+			
+			if( distanciaActual <= error )
+			{
+				id = i;
+				break;
+			}
+
+			if( distanciaActual < distanciaMenor )
+			{
+				distanciaMenor = distanciaActual;
+				id = i;
+			}
+			i++;
+		}
+
+		return id;
+	}
+
+	/**
+	 * @return Comparendo con mayor OBJECTID dentro del grafo.
+	 */
+	public Comparendo buscarComparendoDeMayorObjectID( )
+	{
+		if( grafoFD != null && grafoFD.numberOfStoredItems( ) != 0 )
+		{
+			int i = 0;
+			Comparendo c;
+			Comparendo mayor = null;
+			while( i < grafoFD.numberOfVertices( ) )
+			{
+				Iterator<Comparendo> iter = grafoFD.vertexItems( i );
+				while( iter.hasNext( ) )
+				{
+					c = iter.next( );
+
+					if( mayor == null || ( c != null && c.darId( ) > mayor.darId( ) ) )
+						mayor = c;
+				}
+				i++;
+			}
+			return mayor;
+		}
+		else
+			throw new IllegalStateException(
+					"El grafo aún no ha sido cargado con los comparendos respectivos en cada vertice" );
+	}
+
+	/**
+	 * @return Estación de policía con mayor OBJECTID dentro del grafo.
+	 */
+	public EstacionPolicia buscarEstacionDeMayorObjectID( )
+	{
+		if( grafoFD != null && grafoFD.numberOfStoredItems( ) != 0 )
+		{
+			EstacionPolicia e;
+			EstacionPolicia mayor = null;
+
+			Iterator<EstacionPolicia> iter = grafoFD.distinctiveItems( );
+			while( iter.hasNext( ) )
+			{
+				e = iter.next( );
+				if( mayor == null || ( e != null && e.darId( ) > mayor.darId( ) ) )
+					mayor = e;
+			}
+			
+			return mayor;
+		}
+		else
+			throw new IllegalStateException(
+					"El grafo aún no ha sido cargado con los comparendos respectivos en cada vertice" );
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------
+	// RETORNO DE INFORMACIÓN EN CADENAS DE STRING
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	public String darReporteCompletoDeCarga( )
+	{
+		String reporte = "";
+		reporte += "Número de comparendos cargados: " + grafoFD.numberOfStoredItems( ) + "\n";
+		reporte += "\nComparendo con mayor OBJECTID encontrado:\n\n";
+		reporte += darInformacionDeComparendo( buscarComparendoDeMayorObjectID( ) ) + "\n";
+		reporte += "Número de estaciones de policía cargadas: " + grafoFD.numberOfStoredDistinctiveItems( ) + "\n";
+		reporte += "\nEstación de policía con mayor OBJECTID encontrada:\n\n";
+		reporte += darInformacionDeEstacion( buscarEstacionDeMayorObjectID( ) );
+		reporte += darReporteGrafo( grafoFD );
+		reporte += "Vertice con el mayor OBJECTID encontrado:\n";
+		reporte += darInformacionDeVertice( grafoFD.numberOfVertices( ) - 1 );
+
+		return reporte;
+	}
+
+	/**
+	 * @param c Comparendo a consultar su información. c != null
+	 * @return Información del comparendo.
+	 */
+	public String darInformacionDeComparendo( Comparendo c )
+	{
+		boolean[] mostrar = { true, true, true, true, true, true, true, true, true };
+		return c.consultarInformacion( mostrar );
+	}
+
+	/**
+	 * @param e Estación de policía a consultar su información. e != null
+	 * @return Información de la estación de policía.
+	 */
+	public String darInformacionDeEstacion( EstacionPolicia e )
+	{
+		boolean[] mostrar = { true, true, true, true, true, true, true, true, true };
+		return e.consultarInformacion( mostrar );
+	}
+
+	/**
+	 * @param v id del vertice a consultar su información.
+	 * @return id, latitud y longitud del vertice.
+	 */
+	public String darInformacionDeVertice( int v )
+	{
+		String info = "\n\tID: " + v;
+		info += "\n\tLATITUD: " + grafoFD.getVertexInfo( v ).split( "," )[1];
+		info += "\n\tLONGITUD: " + grafoFD.getVertexInfo( v ).split( "," )[0] + "\n";
+		return info;
+	}
+
+	/**
+	 * @return Cantidad de vertices y arcos creados. Se divide la cantidad de arcos
+	 *         sobre 2 pues en la tabla de hash se repiten las llaves como v-w y
+	 *         w-v de forma que de cualquier forma se pueda acceder al costo de
+	 *         cierto arco.
+	 */
+	public String darReporteGrafo( @SuppressWarnings( "rawtypes" ) UndirectedGraph grafo )
+	{
+		String informacion = "\n";
+		informacion += "Cantidad de vertices creados: " + grafo.numberOfVertices( ) + "\n";
+		informacion += "Cantidad de arcos creados: " + grafo.numberOfEdges( ) + "\n\n";
+		return informacion;
+	}
+
 	/**
 	 * Pinta el grafo con la ayuda del API de Google Maps.
 	 * @throws FileNotFoundException Si no encuentra algún archivo referente a las
@@ -339,7 +555,7 @@ public class Modelo
 
 		// Principio del archivo HTML.
 		String apertura = leerArchivo( APERTURA_HTML );
-		w.append( apertura + "\n" );
+		w.append( apertura + "\n\n" );
 
 		// Principio del script.
 		apertura = leerArchivo( APERTURA_SCRIPT );
@@ -356,55 +572,62 @@ public class Modelo
 		// Formato usado para la creación de una línea.
 		String lineaBruta = leerArchivo( LINEA );
 
-		String circulo, linea, latitud, longitud, latitudAdyacente, longitudAdyacente;
+		String circulo, linea, latitud1, longitud1, latitud2, longitud2;
 		String[] remplazoLatitud, remplazoLongitud;
 		ArrayList<String[]> remplazos;
 
 		// Se itera sobre los vertices.
-		int i = 0, idAdyacente;
+		int i = 0;
 		while( i < grafoFD.numberOfVertices( ) )
 		{
 			String infoVertice = grafoFD.getVertexInfo( i );
-			latitud = infoVertice.split( "," )[1];
-			longitud = infoVertice.split( "," )[0];
-			remplazoLatitud = new String[] { "LATITUD", latitud };
-			remplazoLongitud = new String[] { "LONGITUD", longitud };
+			latitud1 = infoVertice.split( "," )[1];
+			longitud1 = infoVertice.split( "," )[0];
+			remplazoLatitud = new String[] { "LATITUD", latitud1 };
+			remplazoLongitud = new String[] { "LONGITUD", longitud1 };
 			remplazos = new ArrayList<String[]>( );
 			remplazos.add( remplazoLatitud );
 			remplazos.add( remplazoLongitud );
 			circulo = construirComponente( circuloBruto, remplazos );
 
 			w.append( circulo + "\n" );
-
-			// Se itera sobre las adyacencias.
-			Iterator<Integer> iter = grafoFD.adj( i ).iterator( );
-			while( iter.hasNext( ) )
-			{
-				idAdyacente = iter.next( );
-				latitudAdyacente = String.valueOf( grafoFD.getVertexInfo( idAdyacente ).split( "," )[1] );
-				longitudAdyacente = String.valueOf( grafoFD.getVertexInfo( idAdyacente ).split( "," )[0] );
-
-				remplazos = new ArrayList<String[]>( );
-				remplazoLatitud = new String[] { "LATITUD_INICIO", latitud };
-				remplazoLongitud = new String[] { "LONGITUD_INICIO", longitud };
-				remplazos.add( remplazoLatitud );
-				remplazos.add( remplazoLongitud );
-				remplazoLatitud = new String[] { "LATITUD_FINAL", latitudAdyacente };
-				remplazoLongitud = new String[] { "LONGITUD_FINAL", longitudAdyacente };
-				remplazos.add( remplazoLatitud );
-				remplazos.add( remplazoLongitud );
-
-				linea = construirComponente( lineaBruta, remplazos );
-
-				w.append( linea + "\n" );
-			}
 			i++;
+		}
+
+		// Se itera sobre los arcos existentes.
+		Iterator<String> iter = grafoFD.edges( );
+		String arco;
+		int id1, id2;
+		while( iter.hasNext( ) )
+		{
+			arco = iter.next( );
+			id1 = Integer.valueOf( arco.split( "-" )[0] );
+			id2 = Integer.valueOf( arco.split( "-" )[1] );
+			latitud1 = String.valueOf( grafoFD.getVertexInfo( id1 ).split( "," )[1] );
+			longitud1 = String.valueOf( grafoFD.getVertexInfo( id1 ).split( "," )[0] );
+
+			latitud2 = String.valueOf( grafoFD.getVertexInfo( id2 ).split( "," )[1] );
+			longitud2 = String.valueOf( grafoFD.getVertexInfo( id2 ).split( "," )[0] );
+
+			remplazos = new ArrayList<String[]>( );
+			remplazoLatitud = new String[] { "LATITUD_INICIO", latitud1 };
+			remplazoLongitud = new String[] { "LONGITUD_INICIO", longitud1 };
+			remplazos.add( remplazoLatitud );
+			remplazos.add( remplazoLongitud );
+			remplazoLatitud = new String[] { "LATITUD_FINAL", latitud2 };
+			remplazoLongitud = new String[] { "LONGITUD_FINAL", longitud2 };
+			remplazos.add( remplazoLatitud );
+			remplazos.add( remplazoLongitud );
+
+			linea = construirComponente( lineaBruta, remplazos );
+
+			w.append( linea + "\n" );
 		}
 
 		// Cierre del script.
 		String cierre = leerArchivo( CIERRE_SCRIPT );
 
-		w.append( cierre + "\n" );
+		w.append( "\n\n" + cierre + "\n" );
 
 		// Final del archivo HTML.
 		cierre = leerArchivo( CIERRE_HTML );
@@ -437,37 +660,6 @@ public class Modelo
 		}
 
 		return cadena;
-	}
-
-	/**
-	 * @return Información importante de cada estación de policía.
-	 */
-	public String darInformacionEstaciones( )
-	{
-		String informacion = "";
-		boolean[] mostrar = { true, true, true };
-		for( int i = 0; i < estaciones.getSize( ); i++ )
-		{
-			informacion += "Estación " + ( i + 1 ) + ":\n\n";
-			informacion += estaciones.peekPosition( i ).consultarInformacion( mostrar ) + "\n";
-		}
-
-		informacion += "Se cargaron " + estaciones.getSize( ) + " estaciones de policía.\n";
-		return informacion;
-	}
-
-	/**
-	 * @return Cantidad de vertices y arcos creados. Se divide la cantidad de arcos
-	 *         sobre 2 pues en la tabla de hash se repiten las llaves como v-w y
-	 *         w-v de forma que de cualquier forma se pueda acceder al costo de
-	 *         cierto arco.
-	 */
-	public String darReporteGrafo( @SuppressWarnings( "rawtypes" ) UndirectedGraph grafo )
-	{
-		String informacion = "\n";
-		informacion += "Cantidad de vertices creados: " + grafo.numberOfVertices( ) + "\n";
-		informacion += "Cantidad de arcos creados: " + ( int ) ( grafo.numberOfEdges( ) / 2 ) + "\n";
-		return informacion;
 	}
 
 	/**
