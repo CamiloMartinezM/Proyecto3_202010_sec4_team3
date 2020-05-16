@@ -5,7 +5,7 @@ package model.data_structures;
  * @author Camilo Martínez & Nicolás Quintero.
  */
 @SuppressWarnings( "unchecked" )
-public class MaxHeap<T extends Comparable<T>>
+public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 {
 	/**
 	 * Número de elementos en el heap.
