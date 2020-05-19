@@ -20,7 +20,7 @@ public class TestUndirectedGraph
 	 */
 	public final int V = 40;
 
-	private UndirectedGraph<Integer, Double, String, Double> grafo;
+	private UndirectedGraph<String, Integer, Integer> grafo;
 
 	/**
 	 * Inicializa un grafo vacío.
@@ -52,7 +52,7 @@ public class TestUndirectedGraph
 		}
 
 		for( int i = 0; i < V; i++ )
-			grafo.setVertexItem( i, i + 100 );
+			grafo.insertVertexItem( i, i + "", i + 100 );
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class TestUndirectedGraph
 		for( int i = 0; i < ( V - 1 ); i++ )
 		{
 			grafo.addEdge( i, i + 1, Math.sqrt( i * i + Math.pow( i + 1, 2 ) ) );
-			grafo.setVertexItem( i, i + 100 );
+			grafo.insertVertexItem( i, i + "", i + 100 );
 		}
 	}
 
@@ -100,20 +100,20 @@ public class TestUndirectedGraph
 		grafo.addEdge( 1, 0, 20.0 ); // Ya existe pero se actualiza el costo de 10.0 a 20.0
 
 		assertEquals( "No agregó correctamente los arcos.", 2, grafo.numberOfEdges( ) );
-		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeCost( 1, 0 ).doubleValue( ) + "" );
+		assertEquals( "No se actualizó el costo.", 20.0 + "", grafo.getEdgeDoubleCost( 1, 0 ) + "" );
 	}
 
 	@Test
 	public void TestGetEdgeCost( )
 	{
 		for( int i = 0; i < V / 2; i++ )
-			assertEquals( "No debería haber ningún costo.", null, grafo.getEdgeCost( i, i + 20 ) );
+			assertEquals( "No debería haber ningún costo.", UndirectedGraph.INFINITY + "", grafo.getEdgeDoubleCost( i, i + 20 ) + "" );
 		
 		setUp2( );
 		
 		for( int i = 0; i < V / 2; i++ )
 			assertEquals( "No se encontró el costo real.", Math.sqrt( i * i + ( i + 20 ) * ( i + 20 ) ) + "",
-					grafo.getEdgeCost( i, i + 20 ) + "" );
+					grafo.getEdgeDoubleCost( i, i + 20 ) + "" );
 	}
 
 	@Test
@@ -192,14 +192,14 @@ public class TestUndirectedGraph
 	@Test
 	public void TestSetVertexItem( )
 	{
-		grafo.setVertexItem( 0, 1 );
+		grafo.insertVertexItem( 0, 1 + "", 1 );
 		Iterator<Integer> iter = grafo.vertexItems( 0 );
 		assertEquals( "No guardó el item.", 1, iter.next( ).intValue( ) );
 		assertEquals( "No guardó el item.", false, iter.hasNext( ) );
 
-		grafo.setVertexItem( 1, 1 );
-		grafo.setVertexItem( 1, 2 );
-		grafo.setVertexItem( 1, 3 );
+		grafo.insertVertexItem( 1, 1 + "", 1 );
+		grafo.insertVertexItem( 1, 2 + "", 2 );
+		grafo.insertVertexItem( 1, 3 + "", 3 );
 		iter = grafo.vertexItems( 1 );
 		assertEquals( "No guardó el item.", 1, iter.next( ).intValue( ) );
 		assertEquals( "No guardó el item.", 2, iter.next( ).intValue( ) );

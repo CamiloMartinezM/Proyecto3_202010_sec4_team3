@@ -6,11 +6,8 @@ import java.util.Iterator;
  * Interfaz que debe implementar la clase UndirectedGraph.
  * @author Camilo Martínez & Nicolás Quintero
  * @param <V> Tipo de valor o item que se guardará en cada vertice.
- * @param <I> Tipo de información que distingue un vertice de otro
- *            cualitativamente.
- * @param <C> Tipo de costo que tiene un arco entre vertices.
  */
-public interface IGraph<V extends Comparable<V>, I extends Comparable<I>, C extends Comparable<C>>
+public interface IGraph<K extends Comparable<K>, V extends Comparable<V>>
 {
 	public int numberOfVertices( );
 
@@ -22,14 +19,14 @@ public interface IGraph<V extends Comparable<V>, I extends Comparable<I>, C exte
 	 * @param w the other vertex in the edge.
 	 * @throws IllegalArgumentException if any of them is not a valid vertex.
 	 */
-	public void addEdge( int v, int w, C cost );
+	public void addEdge( int v, int w, double cost );
 
 	/**
 	 * @param v Uno de los vertices del arco.
 	 * @param w Otro vertice del arco.
 	 * @return Costo del arco entre los vertices dados por parámetros.
 	 */
-	public C getEdgeCost( int v, int w );
+	public double getEdgeDoubleCost( int v, int w );
 	
 	/**
 	 * Returns the vertices adjacent to the given vertex.
@@ -54,7 +51,7 @@ public interface IGraph<V extends Comparable<V>, I extends Comparable<I>, C exte
 	 * @param v    vertice en cuestión.
 	 * @param item Nuevo item.
 	 */
-	public void setVertexItem( int v, V item );
+	public void insertVertexItem( int v, K key, V item );
 
 	/**
 	 * Le asigna al vertice la información (ambos dados por parámetro). El vertice
@@ -63,13 +60,13 @@ public interface IGraph<V extends Comparable<V>, I extends Comparable<I>, C exte
 	 * @param v    vertice en cuestión.
 	 * @param info Información del vertice.
 	 */
-	public void setVertexInfo( int v, I info );
+	public void setVertexInfo( int v, String info );
 
 	/**
 	 * @param v Vertice.
 	 * @return Información del vertice.
 	 */
-	public I getVertexInfo( int v );
+	public String getVertexInfo( int v );
 
 	/**
 	 * Iterador sobre todos los items asociados al vertice.

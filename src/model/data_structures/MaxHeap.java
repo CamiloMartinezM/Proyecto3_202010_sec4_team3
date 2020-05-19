@@ -155,7 +155,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * Elimina un elemento cuya posición es aquella dada por parámetro.
 	 * @param i Posición del elemento a eliminar.
 	 */
-	private T removeAt( int i )
+	public T removeAt( int i )
 	{
 		if( isEmpty( ) )
 			return null;
@@ -170,6 +170,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 		// Chequea si el último momento fue removido
 		if( i == heapSize )
 			return removed;
+		
 		T elem = heap[i];
 
 		// Intenta sinking
@@ -190,7 +191,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * @return True si el elemento en la posición i es menor que aquél en la
 	 *         posición j.
 	 */
-	private boolean less( int i, int j )
+	public boolean less( int i, int j )
 	{
 		return heap[i].compareTo( heap[j] ) <= 0;
 	}
@@ -200,7 +201,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * @param i Primer nodo a intercambiar.
 	 * @param j Segundo nodo a intercambiar.
 	 */
-	private void exch( int i, int j )
+	public void exch( int i, int j )
 	{
 		T temp = heap[i];
 		heap[i] = heap[j];
@@ -211,7 +212,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * Hace el bottom-up swim.
 	 * @param k Posición.
 	 */
-	private void swim( int k )
+	public void swim( int k )
 	{
 		while( k > 0 && less( k / 2, k ) )
 		{
@@ -224,7 +225,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * Hace el top-down sink.
 	 * @param k Posición.
 	 */
-	private void sink( int k )
+	public void sink( int k )
 	{
 		while( true )
 		{

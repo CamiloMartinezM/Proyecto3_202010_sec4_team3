@@ -5,92 +5,78 @@ import java.util.Iterator;
 /**
  * Implementación de un grafo no dirigido genérico.
  * @author Camilo Martínez & Nicolás Quintero
- * @param <V> Tipo de valor o item que se guardará en cada vertice.
- * @param <I> Tipo de información que distingue un vertice de otro
- *            cualitativamente.
- * @param <C> Tipo de costo que tiene un arco entre vertices.
- * @param <L> Tipo de elemento distintivo dentro de los nodos de las tablas de
- *            hash.
+ * @param <K> Tipo de llave que identifica un vértice.
+ * @param <V> Tipo de item guardado en un vértice.
+ * @param <E> Tipo de item distintivo de un vértice.
  */
 @SuppressWarnings( "unchecked" )
-public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I extends Comparable<I>, C extends Comparable<C>>
-		implements IGraph<V, I, C>
+public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E extends Comparable<E>>
+		implements IGraph<K, V>
 {
 	/**
-	 * Number of vertices.
+	 * Costo que se asigna a un arco que no existe.
+	 */
+	public final static double INFINITY = -1000000000000000.0;
+
+	/**
+	 * Número de vértices.
 	 */
 	private final int V;
 
 	/**
-	 * Number of edges.
-	 */
-	private int E;
-
-	/**
-	 * Number of items stored.
+	 * Número de items guardados en vértices.
 	 */
 	private int S;
-	
+
 	/**
-	 * Number of distinctive items stored.
+	 * Número de items distintivos guardados en vértices.
 	 */
 	private int D;
 
 	/**
-	 * Adjacency list.
+	 * Lista de adyacencia.
 	 */
 	private Bag<Integer>[] adj;
 
 	/**
-	 * Tabla de hash que contiene los items de tipo V de cada vertice. La llave es
-	 * el id
-	 * del vertice y el valor su item.
+	 * Tabla de hash que contiene los vértices. La llave es el ID del vértice y el
+	 * valor un objeto de tipo Vertex.
 	 */
-	private HashTable<Integer, V, L> vertexItems;
+	private HashTable<Integer, Vertex<K, V, E>> vertex;
 
 	/**
-	 * Tabla de hash que contiene la información de cada vertice. La llave es el id
-	 * del vertice y el valor es la información cualitativa de dicho vertice.
+	 * Tabla de hash que contiene los arcos. La llave es la concatenación de los
+	 * ID's de los vertices con "-" separándolos y el valor, un objeto de tipo Edge.
 	 */
-	private HashTable<Integer, I, L> vertexInfo;
+	private HashTable<String, Edge<K, V, E>> edges;
 
 	/**
-	 * Tabla de hash que contiene el costo de los arcos. La llave es la
-	 * concatenación de los id's de los vertices con "-" separándolos y el valor el
-	 * costo asociado.
-	 */
-	public HashTable<String, C, L> costs;
-
-	/**
-	 * Initializes an empty graph with the number of vertices given in parameters
-	 * and 0 edges.
-	 * @param numberOfVertices Number of vertices.
-	 * @throws IllegalArgumentException if given parameter is less than or equal to
-	 *                                  0.
+	 * Inicializa un grafo con el número de vértices dados por parámetro y 0 arcos.
+	 * @param numberOfVertices Número de vértices.
+	 * @throws IllegalArgumentException Si el número de vértices es menor a 0.
 	 */
 	public UndirectedGraph( int numberOfVertices )
 	{
 		if( numberOfVertices < 0 )
 			throw new IllegalArgumentException( "Number of vertices must be nonnegative" );
+
 		this.V = numberOfVertices;
-		this.E = 0;
 		this.D = 0;
 		this.S = 0;
-		
-		// Se usa true, pues se quiere que se remplace el valor si la
-		// misma llave es proporcionada al pretender insertar.
-		this.vertexInfo = new HashTable<>( 997, true );
-		this.costs = new HashTable<>( 997, true );
 
-		this.vertexItems = new HashTable<>( 997 );
+		this.vertex = new HashTable<>( 997, true );
+		this.edges = new HashTable<>( 997, true );
 
 		adj = ( Bag<Integer>[] ) new Bag[numberOfVertices];
 		for( int v = 0; v < numberOfVertices; v++ )
+		{
+			vertex.put( v, new Vertex<>( v ) );
 			adj[v] = new Bag<Integer>( );
+		}
 	}
 
 	/**
-	 * @return Número de vertices en el grafo.
+	 * @return Número de vértices en el grafo.
 	 */
 	public int numberOfVertices( )
 	{
@@ -102,11 +88,11 @@ public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I
 	 */
 	public int numberOfEdges( )
 	{
-		return E;
+		return edges.getSize( );
 	}
 
 	/**
-	 * @return Total de items guardados en vertices.
+	 * @return Total de items guardados en vértices.
 	 */
 	public int numberOfStoredItems( )
 	{
@@ -114,7 +100,7 @@ public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I
 	}
 
 	/**
-	 * @return Total de items distintivos guardados en vertices.
+	 * @return Total de items distintivos guardados en vértices.
 	 */
 	public int numberOfStoredDistinctiveItems( )
 	{
@@ -122,142 +108,204 @@ public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I
 	}
 
 	/**
-	 * Adds the undirected edge v-w to this graph.
-	 * @param v one vertex in the edge.
-	 * @param w the other vertex in the edge.
-	 * @throws IllegalArgumentException if any of them is not a valid vertex.
+	 * Añade el arco entre los vértices dados por parámetro con su costo de tipo
+	 * double.
+	 * @param v Uno de los vértices.
+	 * @param w Otro de los vértices.
+	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
 	 */
-	public void addEdge( int v, int w, C cost )
+	public void addEdge( int v, int w, double cost )
 	{
 		validateVertex( v );
 		validateVertex( w );
-		if( ! ( costs.contains( v + "-" + w ) || costs.contains( w + "-" + v ) ) ) // Si no existe ya ese arco.
+		
+		if( edges.contains( v + "-" + w ) ) // Si existe ya ese arco.
+			edges.get( v + "-" + w ).setDoubleCost( cost );
+		else if( edges.contains( w + "-" + v ) )
+			edges.get( w + "-" + v ).setDoubleCost( cost );
+		// Si no existe.
+		else
 		{
-			E++;
 			adj[v].add( w );
 			adj[w].add( v );
+			edges.put( v + "-" + w, new Edge<>( vertex.get( v ), vertex.get( w ), cost ) );
 		}
-		costs.put( v + "-" + w, cost );
 	}
 
 	/**
-	 * @param v Uno de los vertices del arco.
-	 * @param w Otro vertice del arco.
+	 * @param v Uno de los vértices del arco.
+	 * @param w Otro vértice del arco.
 	 * @return Costo del arco entre los vertices dados por parámetros.
+	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
 	 */
-	public C getEdgeCost( int v, int w )
+	public double getEdgeDoubleCost( int v, int w ) throws IllegalArgumentException
 	{
 		validateVertex( v );
-		return costs.get( v + "-" + w );
+		validateVertex( w );
+
+		if( edges.contains( v + "-" + w ) )
+			return edges.get( v + "-" + w ).getDoubleCost( );
+		else if( edges.contains( w + "-" + v ) )
+			return edges.get( w + "-" + v ).getDoubleCost( );
+		else
+			return INFINITY;
 	}
 
 	/**
-	 * Returns the degree of the given vertex.
-	 * @param v the vertex.
-	 * @return the degree of given vertex.
-	 * @throws IllegalArgumentException if given vertex is not valid.
+	 * Asigna el costo de tipo integer a un arco.
+	 * @param v Uno de los vértices del arco.
+	 * @param w Otro vértice del arco.
+	 * @param cost Costo de tipo integer del arco.
+	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
 	 */
-	public int degreeOf( int v )
+	public void setEdgeIntegerCost( int v, int w, int cost )
+	{
+		validateVertex( v );
+		validateVertex( w );
+
+		if( edges.contains( v + "-" + w ) )
+			edges.get( v + "-" + w ).setIntegerCost( cost );
+		else if( edges.contains( w + "-" + v ) )
+			edges.get( w + "-" + v ).setIntegerCost( cost );
+	}
+	
+	/**
+	 * @param v ID del vértice.
+	 * @return Grado del vértice.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
+	 */
+	public int degreeOf( int v ) throws IllegalArgumentException
 	{
 		validateVertex( v );
 		return adj[v].size( );
 	}
 
 	/**
-	 * Le asigna al vertice de id v el item (ambos dados por parámetro). El vertice
+	 * Le asigna al vértice de ID v el item (ambos dados por parámetro). El vértice
 	 * es
 	 * ubicado dentro de la tabla de hash y a dicha llave se le añade el valor que
 	 * corresponde al item.
-	 * @param v    vertice en cuestión.
+	 * @param v    vértice en cuestión.
 	 * @param item Nuevo item.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public void setVertexItem( int v, V item )
+	public void insertVertexItem( int v, K key, V item )
 	{
-		vertexItems.put( v, item );
-		
-		if( item != null )
-			S++;
+		validateVertex( v );
+		if( !vertex.contains( v ) )
+		{
+			Vertex<K, V, E> v1 = new Vertex<>( v );
+			vertex.put( v, v1 );
+		}
+		vertex.get( v ).insertItem( key, item );
+		S++;
 	}
 
 	/**
-	 * Le asigna al vertice de id v el item (ambos dados por parámetro). El vertice
+	 * Le asigna al vértice de ID v el item (ambos dados por parámetro). El vértice
 	 * es
 	 * ubicado dentro de la tabla de hash y a dicha llave se le añade el valor que
 	 * corresponde al item.
-	 * @param v    vertice en cuestión.
+	 * @param v    Vértice en cuestión.
 	 * @param item Nuevo item.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public void setVertexDistinctiveItem( int v, L item )
+	public void setVertexDistinctiveItem( int v, E item )
 	{
-		vertexItems.putDistinctiveItem( v, item );
+		validateVertex( v );
+		vertex.get( v ).setDistinctiveItem( item );
 		D++;
 	}
 
 	/**
-	 * Le asigna al vertice la información (ambos dados por parámetro). El vertice
+	 * Le asigna al vértice la información (ambos dados por parámetro). El vértice
 	 * es ubicado dentro de la tabla de hash y a dicha llave se le añade el valor
 	 * que corresponde al item.
-	 * @param v    vertice en cuestión.
-	 * @param info Información del vertice.
+	 * @param v    Vértice en cuestión.
+	 * @param info Información del vértice.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public void setVertexInfo( int v, I info )
+	public void setVertexInfo( int v, String info )
 	{
-		vertexInfo.put( v, info );
+		validateVertex( v );
+		vertex.get( v ).setInfo( info );
 	}
 
 	/**
 	 * @param v Vertice.
-	 * @return Información del vertice.
+	 * @return Información del vértice.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public I getVertexInfo( int v )
+	public String getVertexInfo( int v ) throws IllegalArgumentException
 	{
-		return vertexInfo.get( v );
+		validateVertex( v );
+		return vertex.get( v ).getInfo( );
 	}
 
 	/**
-	 * @param v id del vertice a buscar su item distintivo.
-	 * @return Item distintivo del vertice dado por parámetro.
+	 * @param v ID del vértice a buscar su item distintivo.
+	 * @return Item distintivo del vértice dado por parámetro.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public L getVertexDistinctiveItem( int v )
+	public E getVertexDistinctiveItem( int v )
 	{
-		return vertexItems.getDistinctiveItem( v );
+		validateVertex( v );
+		return vertex.get( v ).getDistinctiveItem( );
 	}
 
 	/**
-	 * Returns the vertices adjacent to the given vertex.
-	 * @param v the vertex.
-	 * @return the vertices adjacent to given vertex as an iterable.
-	 * @throws IllegalArgumentException if given vertex is not valid.
+	 * Iterador sobre todos los ID's de los vértices adyacentes al vértice cuyo ID
+	 * es dado por parámetro.
+	 * @param v ID del vértice a chequear sus adyacentes.
+	 * @return Vértices adyacentes al dado por parámetro en forma de iterador.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public Iterable<Integer> adj( int v )
+	public Iterable<Integer> adj( int v ) throws IllegalArgumentException
 	{
 		validateVertex( v );
 		return adj[v];
 	}
 
 	/**
-	 * Iterador sobre todos los items asociados al vertice dado por parámetro.
-	 * @param v id del vertice.
+	 * Iterador sobre todos los items asociados al vértice dado por parámetro.
+	 * @param v ID del vértice.
 	 * @return Iterador sobre todos los valores dentro de la tabla de hash con llave
-	 *         igual al id del vertice.
+	 *         igual al ID del vértice.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public Iterator<V> vertexItems( int v )
+	public Iterator<V> vertexItems( int v ) throws IllegalArgumentException
 	{
 		validateVertex( v );
-		return vertexItems.valuesOf( v );
+
+		return new Iterator<V>( )
+		{
+			private Iterator<V> iter = vertex.get( v ).items( );
+
+			@Override
+			public boolean hasNext( )
+			{
+				return iter.hasNext( );
+			}
+
+			@Override
+			public V next( )
+			{
+				return iter.next( );
+			}
+		};
 	}
 
 	/**
 	 * Iterador sobre todos los items distintivos guardados en el grafo.
-	 * @return Iterador de tipo L.
+	 * @return Iterador de tipo E.
 	 */
-	public Iterator<L> distinctiveItems( )
+	public Iterator<E> distinctiveItems( )
 	{
-		return new Iterator<L>( )
+		return new Iterator<E>( )
 		{
 			int i = 0;
 			int j = 0;
-			private L actual = null;
+			private E actual = null;
 
 			@Override
 			public boolean hasNext( )
@@ -266,7 +314,7 @@ public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I
 			}
 
 			@Override
-			public L next( )
+			public E next( )
 			{
 				actual = null;
 
@@ -283,20 +331,33 @@ public class UndirectedGraph<V extends Comparable<V>, L extends Comparable<L>, I
 	}
 
 	/**
-	 * Iterador sobre todos los arcos existentes.
+	 * Iterador sobre todos los arcos existentes en forma de cadena de los ID's de
+	 * los vértices del arco concatenados con un "-".
 	 * @return Iterador sobre todos los arcos v-w existentes.
 	 */
 	public Iterator<String> edges( )
 	{
-		return costs.keys( );
+		return edges.keys( );
 	}
 
 	/**
-	 * Validates a vertex.
-	 * @param v Vertex to be validated.
-	 * @throws IllegalArgumentException if given vertex is not greater than 0.
+	 * @param v ID del vértice.
+	 * @return Número de items guardados en el vértice.
+	 * @throws IllegalArgumentException Si el vértice dado no es válido.
 	 */
-	private void validateVertex( int v )
+	public int numberOfItemsOf( int v )
+	{
+		validateVertex( v );
+		return vertex.get( v ).numberOfItems( );
+	}
+	
+	/**
+	 * Valida un vértice.
+	 * @param v Vértice a validar.
+	 * @throws IllegalArgumentException Si el vértice es menor que 0 o mayor o igual
+	 *                                  al número total de vértices.
+	 */
+	private void validateVertex( int v ) throws IllegalArgumentException
 	{
 		if( v < 0 || v >= V )
 			throw new IllegalArgumentException( "vertex " + v + " is not between 0 and " + ( V - 1 ) );

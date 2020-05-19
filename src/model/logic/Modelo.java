@@ -70,12 +70,12 @@ public class Modelo
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
 	 */
-	private UndirectedGraph<Comparendo, EstacionPolicia, String, Double> grafoFD = null;
+	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoFD = null;
 
 	/**
 	 * Grafo cargado a partir de un archivo JSON.
 	 */
-	private UndirectedGraph<Comparendo, EstacionPolicia, String, Double> grafoJS = null;
+	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoJS = null;
 
 	/**
 	 * Constructor del modelo del mundo.
@@ -103,12 +103,14 @@ public class Modelo
 			cargarComparendos( rutaArchivo );
 			Comparendo c;
 			int verticeMasCercano;
+			Stopwatch timer = new Stopwatch( );
 			while( !comparendos.isEmpty( ) )
 			{
 				c = comparendos.poll( );
-				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 5 );
-				grafoFD.setVertexItem( verticeMasCercano, c );
+				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 2.5 );
+				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
+			System.out.println( timer.elapsedTime( ) );
 		}
 	}
 
@@ -117,8 +119,9 @@ public class Modelo
 	 * @param rutaArchivo Archivo donde están guardadas las estaciones de policía.
 	 *                    rutaArchivo != null, != ""
 	 * @throws IOException Si hay un problema de lectura del archivo.
+	 * @throws IllegalStateException Si alguno de los vértices no es válido.
 	 */
-	public void cargarEstacionesEnGrafo( String rutaArchivo ) throws IOException
+	public void cargarEstacionesEnGrafo( String rutaArchivo ) throws IOException, IllegalStateException
 	{
 		if( grafoFD != null )
 		{
@@ -130,6 +133,28 @@ public class Modelo
 				e = estaciones.poll( );
 				verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
+			}
+		}
+	}
+
+	/**
+	 * Actualiza el costo de tipo integer que tiene cada arco que corresponde al
+	 * número de comparendos guardados entre los dos vértices.
+	 * @throws IllegalStateException Si alguno de los ID's de los vértices no es válido.
+	 */
+	public void actualizarCostosEnGrafo( ) throws IllegalStateException
+	{
+		if( grafoFD != null )
+		{
+			String arco;
+			int v, w;
+			Iterator<String> iter = grafoFD.edges( );
+			while( iter.hasNext( ) )
+			{
+				arco = iter.next( );
+				v = Integer.parseInt( arco.split( "-" )[0] );
+				w = Integer.parseInt( arco.split( "-" )[1] );
+				grafoFD.setEdgeIntegerCost( v, w, grafoFD.numberOfItemsOf( v ) + grafoFD.numberOfItemsOf( w ) );
 			}
 		}
 	}
@@ -233,7 +258,6 @@ public class Modelo
 			info = vertice.replaceFirst( id + ",", "" );
 
 			// Se añade el vértice.
-			grafoFD.setVertexItem( id, null );
 			grafoFD.setVertexInfo( id, info );
 			vertice = reader.readLine( );
 		}
@@ -315,7 +339,7 @@ public class Modelo
 				w.println( "\t\t\t\t" + "{" );
 				idAdyacente = iter.next( );
 				w.println( "\t\t\t\t\t" + "\"id\": " + idAdyacente + "," );
-				w.println( "\t\t\t\t\t" + "\"costo\": " + grafoFD.getEdgeCost( i, idAdyacente ) );
+				w.println( "\t\t\t\t\t" + "\"costo\": " + grafoFD.getEdgeDoubleCost( i, idAdyacente ) );
 
 				boolean tieneSiguiente = iter.hasNext( );
 				if( tieneSiguiente )
@@ -382,17 +406,13 @@ public class Modelo
 
 	/**
 	 * Retorna el id del vertice más cercano a las coordenadas dadas por parámetro.
+	 * <b>pre:</b> grafoFD ya ha sido inicializado.
 	 * @param latitud  Latitud a buscar más cercana.
 	 * @param longitud Longitud a buscar más cercana.
 	 * @return id del vertice.
 	 */
 	public int darVerticeMasCercanoA( double latitud, double longitud, double error )
 	{
-		if( grafoFD == null )
-		{
-			throw new IllegalStateException( "El grafo no ha sido cargado" );
-		}
-
 		int id = 0;
 		int i = 0;
 		String infoVertice;
@@ -403,7 +423,7 @@ public class Modelo
 			longitudA = Double.parseDouble( infoVertice.split( "," )[0] );
 			latitudA = Double.parseDouble( infoVertice.split( "," )[1] );
 			distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
-			
+
 			if( distanciaActual <= error )
 			{
 				id = i;
@@ -467,7 +487,7 @@ public class Modelo
 				if( mayor == null || ( e != null && e.darId( ) > mayor.darId( ) ) )
 					mayor = e;
 			}
-			
+
 			return mayor;
 		}
 		else

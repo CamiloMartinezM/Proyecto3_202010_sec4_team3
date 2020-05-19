@@ -20,7 +20,7 @@ public class Controller
 	private final static String ARCHIVO_VERTICES = "./data/bogota_vertices.txt";
 	private final static String ARCHIVO_ARCOS = "./data/bogota_arcos.txt";
 	private final static String ARCHIVO_JSON = "./data/grafo_en_json.json";
-	
+
 	/**
 	 * Instancia del modelo.
 	 */
@@ -65,7 +65,7 @@ public class Controller
 						view.printMessage( "Hubo un problema cargando el grafo.\n" );
 						continue;
 					}
-					
+
 					try
 					{
 						view.printMessage( "\nCargando comparendos...\n" );
@@ -78,9 +78,10 @@ public class Controller
 					}
 					catch( IOException e3 )
 					{
-						view.printMessage( "Hubo un problema cargando los comparendos.\n" );
+						view.printMessage( "* Hubo un problema cargando los comparendos *" );
+						view.printMessage( "* Asegúrese que el archivo de los comparendos esté en ./data *" );
 					}
-					
+
 					try
 					{
 						view.printMessage( "\nCargando estaciones de policía...\n" );
@@ -95,9 +96,30 @@ public class Controller
 					{
 						view.printMessage( "Hubo un problema cargando las estaciones de policía.\n" );
 					}
-					view.printMessage( modelo.darReporteCompletoDeCarga( ) );
+
+					try
+					{
+						view.printMessage(
+								"Actualizando los costos de los arcos según el número de comparendos entre los vértices conectados...\n" );
+						modelo.actualizarCostosEnGrafo( );
+						view.printMessage( "¡Los costos fueron actualizados exitosamente!\n" );
+					}
+					catch( IllegalStateException e3 )
+					{
+						view.printMessage( "* Hubo un problema actualizando los costos de los arcos *" );
+						view.printMessage( e3.getMessage( ) );
+					}
+
+					try
+					{
+						view.printMessage( modelo.darReporteCompletoDeCarga( ) );
+					}
+					catch( IllegalStateException e )
+					{
+						view.printMessage( e.getMessage( ) + "\n" );
+					}
 					break;
-					
+
 				case 6:
 					view.printJump( );
 					view.printMessage( "\n¡Hasta pronto!\n" );

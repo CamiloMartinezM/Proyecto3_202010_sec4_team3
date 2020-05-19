@@ -20,7 +20,7 @@ public class TestHashTable
 	/**
 	 * Tabla de hash.
 	 */
-	private HashTable<String, Integer, Integer> table;
+	private HashTable<String, Integer> table;
 
 	/**
 	 * Arreglo de strings que contiene las llaves y valores ingresados. Se usan para

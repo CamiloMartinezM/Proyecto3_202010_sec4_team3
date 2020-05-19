@@ -9,7 +9,7 @@ import java.util.Iterator;
  * @author Camilo Martínez & Nicolás Quintero
  */
 @SuppressWarnings( "unchecked" )
-public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> implements IHashTable<K, V>
+public class HashTable<K extends Comparable<K>, V extends Comparable<V>> implements IHashTable<K, V>
 {
 	/**
 	 * Capacidad predeterminada del arreglo.
@@ -24,7 +24,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	/**
 	 * Arreglo de cadenas.
 	 */
-	private HashNode<K, V, E>[] st;
+	private HashNode<K, V>[] st;
 
 	/**
 	 * Número de posiciones ocupadas en el arreglo por al menos una llave, capacidad
@@ -80,7 +80,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	public HashTable( int capacity, boolean replaceValue )
 	{
 		this.capacity = Math.max( M, capacity );
-		st = ( HashNode<K, V, E>[] ) new HashNode[this.capacity];
+		st = ( HashNode<K, V>[] ) new HashNode[this.capacity];
 		minKey = null;
 		maxKey = null;
 		this.replaceValue = replaceValue;
@@ -137,7 +137,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	 */
 	public V get( K key )
 	{
-		HashNode<K, V, E> x = containingNode( key );
+		HashNode<K, V> x = containingNode( key );
 		if( x != null )
 			return x.getValue( );
 		return null;
@@ -171,7 +171,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	 */
 	private void insert( K key, V value )
 	{
-		HashNode<K, V, E> x = containingNode( key );
+		HashNode<K, V> x = containingNode( key );
 
 		// Ya hay un nodo con dicha llave asociada.
 		if( x != null )
@@ -181,7 +181,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 			{
 				x.replaceValue( value );
 				return; // Se termina aquí el método pues si se remplaza el valor, no aumentó el número
-						 // de pares llave-valor.
+						// de pares llave-valor.
 			}
 
 		// No hay un nodo con dicha llave asociada, por lo cual se crea y se ajusta el
@@ -198,7 +198,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 			if( st[i] == null )
 				height++;	// Se aumenta el número de posiciones ocupadas en la tabla o arreglo st.
 
-			st[i] = new HashNode<K, V, E>( key, value, st[i] );
+			st[i] = new HashNode<K, V>( key, value, st[i] );
 		}
 
 		size++; // Se aumenta el número de pares llave-valor existentes en la tabla de hash.
@@ -209,10 +209,10 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	 * @return Nodo contenedor de la llave dada por parámetro, null si no se
 	 *         encuentra.
 	 */
-	public HashNode<K, V, E> containingNode( K key )
+	public HashNode<K, V> containingNode( K key )
 	{
 		int i = hash( key );
-		for( HashNode<K, V, E> x = st[i]; x != null; x = x.getNext( ) )
+		for( HashNode<K, V> x = st[i]; x != null; x = x.getNext( ) )
 			if( key.equals( x.key ) )
 				return x;
 
@@ -235,7 +235,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	 */
 	public V delete( K key )
 	{
-		HashNode<K, V, E> x = containingNode( key );
+		HashNode<K, V> x = containingNode( key );
 
 		if( x != null )
 		{
@@ -256,8 +256,8 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 			}
 			else
 			{
-				HashNode<K, V, E> prev = null;
-				for( HashNode<K, V, E> y = st[i]; y != null; y = y.getNext( ) )
+				HashNode<K, V> prev = null;
+				for( HashNode<K, V> y = st[i]; y != null; y = y.getNext( ) )
 				{
 					if( x == y )
 					{
@@ -276,33 +276,6 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 		}
 		return null;
 	}
-
-	/**
-	 * Añade el item distintivo a la llave dada por parámetro.
-	 * @param key  Llave a la cual agregar el item distintivo.
-	 * @param item Item distintivo.
-	 * @throws IllegalAccessError Si la llave dada por parámetro no existe.
-	 */
-	public void putDistinctiveItem( K key, E item ) throws IllegalAccessError
-	{
-		if( contains( key ) )
-			containingNode( key ).setDistinctiveItem( item );
-		else
-			throw new IllegalAccessError(
-					"Se está intentando acceder y cambiar el item distintivo de una llave inexistente" );
-	}
-
-	/**
-	 * @param key Llave a buscar su item distintivo.
-	 * @return Item distintivo de la llave dada por parámetro. Si la llave no existe, retorna null.
-	 */
-	public E getDistinctiveItem( K key )
-	{
-		if( contains( key ) )
-			return containingNode( key ).getDistinctiveItem( );
-		else
-			return null;
-	}
 	
 	/**
 	 * Reinicializa la tabla de hash. <b>post:</b> Todos los pares llave-valor
@@ -311,7 +284,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	 */
 	private void clear( )
 	{
-		st = ( HashNode<K, V, E>[] ) new HashNode[capacity];
+		st = ( HashNode<K, V>[] ) new HashNode[capacity];
 		size = 0;
 		height = 0;
 	}
@@ -324,11 +297,11 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 	{
 		numOfRehashes++;
 		capacity *= 2;				// Se duplica la capacidad de la tabla.
-		HashNode<K, V, E>[] temp = st; // Guarda los pares llave-valor.
+		HashNode<K, V>[] temp = st; // Guarda los pares llave-valor.
 		clear( );					// Reinicializa la tabla.
 
 		for( int i = 0; i < temp.length; i++ )
-			for( HashNode<K, V, E> x = temp[i]; x != null; x = x.getNext( ) )
+			for( HashNode<K, V> x = temp[i]; x != null; x = x.getNext( ) )
 				// Se insertan los nodos dentro de la lista enlazada secundaria del nodo.
 				for( V y : x.getListOfItems( ) )
 					insert( x.key, y );
@@ -420,7 +393,7 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>, E> impl
 		{
 			int iActual = 0;
 			int hActual = 0;
-			private HashNode<K, V, E> actual = null;
+			private HashNode<K, V> actual = null;
 
 			@Override
 			public boolean hasNext( )
