@@ -104,9 +104,13 @@ public class Controller
 						modelo.actualizarCostosEnGrafo( );
 						view.printMessage( "¡Los costos fueron actualizados exitosamente!\n" );
 					}
+					catch( NullPointerException e2 )
+					{
+						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
 					catch( IllegalStateException e3 )
 					{
-						view.printMessage( "* Hubo un problema actualizando los costos de los arcos *" );
+						view.printMessage( "* Hubo un problema actualizando los costos de los arcos *\n" );
 						view.printMessage( e3.getMessage( ) );
 					}
 

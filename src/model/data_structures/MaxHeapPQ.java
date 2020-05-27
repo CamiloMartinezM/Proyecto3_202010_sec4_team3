@@ -5,7 +5,7 @@ package model.data_structures;
  * @author Camilo Martínez & Nicolás Quintero.
  */
 @SuppressWarnings( "unchecked" )
-public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
+public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 {
 	/**
 	 * Número de elementos en el heap.
@@ -26,7 +26,7 @@ public class MaxHeap<T extends Comparable<T>> implements IPriorityHeap<T>
 	 * Construye un heap de prioridad vacío.
 	 * @param heapCapacity Capacidad del heap.
 	 */
-	public MaxHeap( int heapCapacity )
+	public MaxHeapPQ( int heapCapacity )
 	{
 		heap = ( T[] ) new Comparable[heapCapacity];
 		heapSize = 0;

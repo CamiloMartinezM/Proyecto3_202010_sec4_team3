@@ -89,6 +89,7 @@ public class Bag<E> implements Iterable<E>
 		{
 			if( !hasNext( ) )
 				throw new NoSuchElementException( );
+			
 			E item = current.getItem( );
 			current = current.getNext( );
 			return item;

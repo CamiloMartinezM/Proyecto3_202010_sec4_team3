@@ -7,13 +7,13 @@ import java.util.Random;
 import org.junit.Before;
 import org.junit.Test;
 
-import model.data_structures.MaxHeapPQ;
+import model.data_structures.MinHeapPQ;
 
 /**
  * Test de la estructura de datos.
  * @author Camilo Martínez & Nicolás Quintero.
  */
-public class TestMaxHeap
+public class TestMinHeapPQ
 {
 	/**
 	 * Capacidad de la cola.
@@ -23,7 +23,7 @@ public class TestMaxHeap
 	/**
 	 * Cola de prioridad de Integers.
 	 */
-	private MaxHeapPQ<Integer> heap;
+	private MinHeapPQ<Integer> heap;
 
 	/**
 	 * Escenario 1: Inicializa una cola de prioridad vacía.
@@ -31,7 +31,7 @@ public class TestMaxHeap
 	@Before
 	public void setUp1( )
 	{
-		heap = new MaxHeapPQ<>( CAPACITY );
+		heap = new MinHeapPQ<>( CAPACITY );
 	}
 
 	/**
@@ -45,11 +45,11 @@ public class TestMaxHeap
 		for( int i = 0; i < CAPACITY; i++ )
 		{
 			if( i == Math.floorDiv( CAPACITY, 2 ) )
-				heap.insert( 101 );
+				heap.insert( -1 );
 			else if( i == Math.floorDiv( CAPACITY, 3 ) )
-				heap.insert( 102 );
+				heap.insert( -2 );
 			else if( i == Math.floorDiv( CAPACITY, 6 ) )
-				heap.insert( 103 );
+				heap.insert( -3 );
 			else
 				heap.insert( new Random( ).nextInt( ( max - min ) + 1 ) + min );
 		}
@@ -73,9 +73,9 @@ public class TestMaxHeap
 
 		setUp2( );
 
-		assertEquals( "Debió retornar true.", true, heap.contains( 101 ) );
-		assertEquals( "Debió retornar true.", true, heap.contains( 102 ) );
-		assertEquals( "Debió retornar true.", true, heap.contains( 103 ) );
+		assertEquals( "Debió retornar true.", true, heap.contains( -1 ) );
+		assertEquals( "Debió retornar true.", true, heap.contains( -2 ) );
+		assertEquals( "Debió retornar true.", true, heap.contains( -3 ) );
 		assertEquals( "Debió retornar false.", false, heap.contains( 104 ) );
 	}
 
@@ -84,13 +84,12 @@ public class TestMaxHeap
 	{
 		setUp2( );
 
-		assertEquals( "No insertó bien.", 103, heap.peek( ).intValue( ) );
+		assertEquals( "No insertó bien.", -3, heap.peek( ).intValue( ) );
 
-		heap.remove( 103 );
-		heap.insert( 104 );
+		heap.remove( -3 );
 
-		assertEquals( "No insertó bien.", 104, heap.peek( ).intValue( ) );
-		assertEquals( "No insertó bien.", 104, heap.peekPosition( 0 ).intValue( ) );
+		assertEquals( "No insertó bien.", -2, heap.peek( ).intValue( ) );
+		assertEquals( "No insertó bien.", -2, heap.peekPosition( 0 ).intValue( ) );
 	}
 
 	@Test
@@ -100,12 +99,12 @@ public class TestMaxHeap
 
 		setUp2( );
 
-		assertEquals( "Debió retornar 103.", 103, heap.peek( ).intValue( ) );
+		assertEquals( "Debió retornar -3.", -3, heap.peek( ).intValue( ) );
 
-		heap.remove( 103 );
-		heap.insert( 104 );
+		heap.remove( -3 );
+		heap.insert( -4 );
 
-		assertEquals( "Debió retornar 103.", 104, heap.peek( ).intValue( ) );
+		assertEquals( "Debió retornar -4.", -4, heap.peek( ).intValue( ) );
 	}
 
 	@Test
@@ -116,9 +115,9 @@ public class TestMaxHeap
 
 		setUp2( );
 
-		assertEquals( "Debió retornar 103.", 103, heap.peekPosition( 0 ).intValue( ) );
-		assertEquals( "Debió retornar 102.", 102, heap.peekPosition( 1 ).intValue( ) );
-		assertEquals( "Debió retornar 101.", 101, heap.peekPosition( 2 ).intValue( ) );
+		assertEquals( "Debió retornar -3.", -3, heap.peekPosition( 0 ).intValue( ) );
+		assertEquals( "Debió retornar -2.", -2, heap.peekPosition( 1 ).intValue( ) );
+		assertEquals( "Debió retornar -1.", -1, heap.peekPosition( 2 ).intValue( ) );
 	}
 
 	@Test
@@ -129,9 +128,9 @@ public class TestMaxHeap
 
 		setUp2( );
 
-		assertEquals( "Debió retornar true.", true, heap.remove( 103 ) );
-		assertEquals( "Debió retornar true.", true, heap.remove( 102 ) );
-		assertEquals( "Debió retornar true.", true, heap.remove( 101 ) );
+		assertEquals( "Debió retornar true.", true, heap.remove( -3 ) );
+		assertEquals( "Debió retornar true.", true, heap.remove( -2 ) );
+		assertEquals( "Debió retornar true.", true, heap.remove( -1 ) );
 		assertEquals( "Debió retornar " + ( CAPACITY - 3 ), CAPACITY - 3, heap.getSize( ) );
 	}
 
@@ -142,7 +141,7 @@ public class TestMaxHeap
 
 		setUp2( );
 
-		assertEquals( "Debió retornar 103.", 103, heap.poll( ).intValue( ) );
+		assertEquals( "Debió retornar -3.", -3, heap.poll( ).intValue( ) );
 		assertEquals( "Debió retornar " + ( CAPACITY - 1 ), CAPACITY - 1, heap.getSize( ) );
 		assertEquals( "Debió retornar null.", null, heap.peekPosition( CAPACITY ) );
 	}

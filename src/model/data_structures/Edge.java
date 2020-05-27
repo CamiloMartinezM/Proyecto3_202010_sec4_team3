@@ -29,35 +29,25 @@ public class Edge<K extends Comparable<K>, V extends Comparable<V>, L extends Co
 	}
 
 	/**
-	 * @return Vértice 1 del arco.
+	 * @return Cualquiera de los ID's de los vértices pertenecientes al arco.
 	 */
-	public Vertex<K, V, L> getV1( )
+	public int either( )
 	{
-		return v1;
+		return v1.getId( );
 	}
 
 	/**
-	 * @param v1 Vértice 1 a asignar.
+	 * @param vertex ID del vértice que no se quiere.
+	 * @return Vértice del ID que no es aquél dado por parámetro.
+	 * @throws RuntimeException Si el ID del vértice dado no es ninguno de los 2
+	 *                          vértices asociados al arco.
 	 */
-	public void setV1( Vertex<K, V, L> v1 )
+	public int other( int vertex )
 	{
-		this.v1 = v1;
-	}
+		if( vertex != v1.getId( ) && vertex != v2.getId( ) )
+			throw new RuntimeException( "Inconsistent edge" );
 
-	/**
-	 * @return Vértice 2 del arco.
-	 */
-	public Vertex<K, V, L> getV2( )
-	{
-		return v2;
-	}
-
-	/**
-	 * @param v2 Vértice 2 a asignar.
-	 */
-	public void setV2( Vertex<K, V, L> v2 )
-	{
-		this.v2 = v2;
+		return ( v1.getId( ) == vertex ) ? v2.getId( ) : v1.getId( );
 	}
 
 	/**
@@ -95,7 +85,11 @@ public class Edge<K extends Comparable<K>, V extends Comparable<V>, L extends Co
 	@Override
 	public int compareTo( Edge<K, V, L> o )
 	{
-		// TODO Auto-generated method stub
-		return 0;
+		if( this.doubleCost < o.getDoubleCost( ) )
+			return -1;
+		else if( this.doubleCost > o.getDoubleCost( ) )
+			return 1;
+		else
+			return 0;
 	}
 }

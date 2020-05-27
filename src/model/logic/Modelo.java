@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import model.data_structures.MaxHeap;
+import model.data_structures.MaxHeapPQ;
 import model.data_structures.MaxQueue;
 import model.data_structures.UndirectedGraph;
 
@@ -65,7 +65,7 @@ public class Modelo
 	/**
 	 * Heap de prioridad que guarda la información de los comparendos.
 	 */
-	private MaxHeap<Comparendo> comparendos = null;
+	private MaxHeapPQ<Comparendo> comparendos = null;
 
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
@@ -103,14 +103,12 @@ public class Modelo
 			cargarComparendos( rutaArchivo );
 			Comparendo c;
 			int verticeMasCercano;
-			Stopwatch timer = new Stopwatch( );
 			while( !comparendos.isEmpty( ) )
 			{
 				c = comparendos.poll( );
-				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 2.5 );
+				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 5 );
 				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
-			System.out.println( timer.elapsedTime( ) );
 		}
 	}
 
@@ -118,7 +116,7 @@ public class Modelo
 	 * Carga las estaciones de policía dentro del grafo.
 	 * @param rutaArchivo Archivo donde están guardadas las estaciones de policía.
 	 *                    rutaArchivo != null, != ""
-	 * @throws IOException Si hay un problema de lectura del archivo.
+	 * @throws IOException           Si hay un problema de lectura del archivo.
 	 * @throws IllegalStateException Si alguno de los vértices no es válido.
 	 */
 	public void cargarEstacionesEnGrafo( String rutaArchivo ) throws IOException, IllegalStateException
@@ -140,7 +138,8 @@ public class Modelo
 	/**
 	 * Actualiza el costo de tipo integer que tiene cada arco que corresponde al
 	 * número de comparendos guardados entre los dos vértices.
-	 * @throws IllegalStateException Si alguno de los ID's de los vértices no es válido.
+	 * @throws IllegalStateException Si alguno de los ID's de los vértices no es
+	 *                               válido.
 	 */
 	public void actualizarCostosEnGrafo( ) throws IllegalStateException
 	{
@@ -171,7 +170,7 @@ public class Modelo
 	 */
 	public void cargarComparendos( String rutaArchivo ) throws IOException
 	{
-		comparendos = new MaxHeap<>( NUMERO_COMPARENDOS );
+		comparendos = new MaxHeapPQ<>( NUMERO_COMPARENDOS );
 
 		InputStream is = new DataInputStream( new FileInputStream( rutaArchivo ) );
 		ObjectMapper mapper = new ObjectMapper( );
@@ -333,7 +332,7 @@ public class Modelo
 			w.println( longitud + "," + latitud + "]," );
 			w.println( "\t\t\t" + "\"adyacencias\": [" );
 
-			Iterator<Integer> iter = grafoFD.adj( i ).iterator( );
+			Iterator<Integer> iter = grafoFD.vertexAdjacentTo( i );
 			while( iter.hasNext( ) )
 			{
 				w.println( "\t\t\t\t" + "{" );
@@ -499,6 +498,10 @@ public class Modelo
 	// RETORNO DE INFORMACIÓN EN CADENAS DE STRING
 	// ---------------------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * @return Reporte de la carga de los comparendos, el grafo, las estaciones de
+	 *         policía, entre otros datos que se muestran al inicio del programa.
+	 */
 	public String darReporteCompletoDeCarga( )
 	{
 		String reporte = "";

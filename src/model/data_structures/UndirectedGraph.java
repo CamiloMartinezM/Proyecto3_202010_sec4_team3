@@ -7,11 +7,11 @@ import java.util.Iterator;
  * @author Camilo Martínez & Nicolás Quintero
  * @param <K> Tipo de llave que identifica un vértice.
  * @param <V> Tipo de item guardado en un vértice.
- * @param <E> Tipo de item distintivo de un vértice.
+ * @param <L> Tipo de item distintivo de un vértice.
  */
 @SuppressWarnings( "unchecked" )
-public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E extends Comparable<E>>
-		implements IGraph<K, V>
+public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>>
+		implements IGraph<K, V, L>
 {
 	/**
 	 * Costo que se asigna a un arco que no existe.
@@ -22,6 +22,11 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * Número de vértices.
 	 */
 	private final int V;
+
+	/**
+	 * Número de arcos.
+	 */
+	private int E;
 
 	/**
 	 * Número de items guardados en vértices.
@@ -36,19 +41,13 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	/**
 	 * Lista de adyacencia.
 	 */
-	private Bag<Integer>[] adj;
+	private Bag<Edge<K, V, L>>[] adj;
 
 	/**
 	 * Tabla de hash que contiene los vértices. La llave es el ID del vértice y el
 	 * valor un objeto de tipo Vertex.
 	 */
-	private HashTable<Integer, Vertex<K, V, E>> vertex;
-
-	/**
-	 * Tabla de hash que contiene los arcos. La llave es la concatenación de los
-	 * ID's de los vertices con "-" separándolos y el valor, un objeto de tipo Edge.
-	 */
-	private HashTable<String, Edge<K, V, E>> edges;
+	private HashTable<Integer, Vertex<K, V, L>> vertex;
 
 	/**
 	 * Inicializa un grafo con el número de vértices dados por parámetro y 0 arcos.
@@ -61,17 +60,17 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 			throw new IllegalArgumentException( "Number of vertices must be nonnegative" );
 
 		this.V = numberOfVertices;
+		this.E = 0;
 		this.D = 0;
 		this.S = 0;
 
 		this.vertex = new HashTable<>( 997, true );
-		this.edges = new HashTable<>( 997, true );
 
-		adj = ( Bag<Integer>[] ) new Bag[numberOfVertices];
+		adj = ( Bag<Edge<K, V, L>>[] ) new Bag[numberOfVertices];
 		for( int v = 0; v < numberOfVertices; v++ )
 		{
 			vertex.put( v, new Vertex<>( v ) );
-			adj[v] = new Bag<Integer>( );
+			adj[v] = new Bag<Edge<K, V, L>>( );
 		}
 	}
 
@@ -88,7 +87,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 */
 	public int numberOfEdges( )
 	{
-		return edges.getSize( );
+		return E;
 	}
 
 	/**
@@ -114,22 +113,15 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * @param w Otro de los vértices.
 	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
 	 */
-	public void addEdge( int v, int w, double cost )
+	public void addEdge( int v, int w, double cost ) throws IllegalArgumentException
 	{
 		validateVertex( v );
 		validateVertex( w );
-		
-		if( edges.contains( v + "-" + w ) ) // Si existe ya ese arco.
-			edges.get( v + "-" + w ).setDoubleCost( cost );
-		else if( edges.contains( w + "-" + v ) )
-			edges.get( w + "-" + v ).setDoubleCost( cost );
-		// Si no existe.
-		else
-		{
-			adj[v].add( w );
-			adj[w].add( v );
-			edges.put( v + "-" + w, new Edge<>( vertex.get( v ), vertex.get( w ), cost ) );
-		}
+
+		Edge<K, V, L> e = new Edge<K, V, L>( vertex.get( v ), vertex.get( w ), cost );
+		adj[v].add( e );
+		adj[w].add( e );
+		E++;
 	}
 
 	/**
@@ -143,18 +135,17 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 		validateVertex( v );
 		validateVertex( w );
 
-		if( edges.contains( v + "-" + w ) )
-			return edges.get( v + "-" + w ).getDoubleCost( );
-		else if( edges.contains( w + "-" + v ) )
-			return edges.get( w + "-" + v ).getDoubleCost( );
-		else
-			return INFINITY;
+		for( Edge<K, V, L> e : edgesAdjacentTo( v ) )
+			if( e.either( ) == w || e.other( e.either( ) ) == w ) // Comprueba que este sí sea el arco.
+				return e.getDoubleCost( );
+
+		return INFINITY; // Si el arco no existe.
 	}
 
 	/**
 	 * Asigna el costo de tipo integer a un arco.
-	 * @param v Uno de los vértices del arco.
-	 * @param w Otro vértice del arco.
+	 * @param v    Uno de los vértices del arco.
+	 * @param w    Otro vértice del arco.
 	 * @param cost Costo de tipo integer del arco.
 	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
 	 */
@@ -163,12 +154,14 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 		validateVertex( v );
 		validateVertex( w );
 
-		if( edges.contains( v + "-" + w ) )
-			edges.get( v + "-" + w ).setIntegerCost( cost );
-		else if( edges.contains( w + "-" + v ) )
-			edges.get( w + "-" + v ).setIntegerCost( cost );
+		for( Edge<K, V, L> e : edgesAdjacentTo( v ) )
+			if( e.either( ) == w || e.other( e.either( ) ) == w )
+			{
+				e.setIntegerCost( cost );
+				break;
+			}
 	}
-	
+
 	/**
 	 * @param v ID del vértice.
 	 * @return Grado del vértice.
@@ -194,7 +187,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 		validateVertex( v );
 		if( !vertex.contains( v ) )
 		{
-			Vertex<K, V, E> v1 = new Vertex<>( v );
+			Vertex<K, V, L> v1 = new Vertex<>( v );
 			vertex.put( v, v1 );
 		}
 		vertex.get( v ).insertItem( key, item );
@@ -210,7 +203,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * @param item Nuevo item.
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public void setVertexDistinctiveItem( int v, E item )
+	public void setVertexDistinctiveItem( int v, L item )
 	{
 		validateVertex( v );
 		vertex.get( v ).setDistinctiveItem( item );
@@ -247,7 +240,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * @return Item distintivo del vértice dado por parámetro.
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public E getVertexDistinctiveItem( int v )
+	public L getVertexDistinctiveItem( int v )
 	{
 		validateVertex( v );
 		return vertex.get( v ).getDistinctiveItem( );
@@ -260,7 +253,35 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * @return Vértices adyacentes al dado por parámetro en forma de iterador.
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
-	public Iterable<Integer> adj( int v ) throws IllegalArgumentException
+	public Iterator<Integer> vertexAdjacentTo( int v ) throws IllegalArgumentException
+	{
+		validateVertex( v );
+		return new Iterator<Integer>( )
+		{
+			private Iterator<Edge<K, V, L>> iter = edgesAdjacentTo( v ).iterator( );
+
+			@Override
+			public boolean hasNext( )
+			{
+				return iter.hasNext( );
+			}
+
+			@Override
+			public Integer next( )
+			{
+				return iter.next( ).other( v );
+			}
+		};
+	}
+
+	/**
+	 * Iterador sobre todos los arcos adyacentes al vértice cuyo ID es dado por
+	 * parámetro.
+	 * @param v ID del vértice a chequear sus arcos adyacentes.
+	 * @return Arcos adyacentes al dado por parámetro en forma de iterable.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
+	 */
+	public Iterable<Edge<K, V, L>> edgesAdjacentTo( int v ) throws IllegalArgumentException
 	{
 		validateVertex( v );
 		return adj[v];
@@ -299,13 +320,13 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 * Iterador sobre todos los items distintivos guardados en el grafo.
 	 * @return Iterador de tipo E.
 	 */
-	public Iterator<E> distinctiveItems( )
+	public Iterator<L> distinctiveItems( )
 	{
-		return new Iterator<E>( )
+		return new Iterator<L>( )
 		{
 			int i = 0;
 			int j = 0;
-			private E actual = null;
+			private L actual = null;
 
 			@Override
 			public boolean hasNext( )
@@ -314,7 +335,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 			}
 
 			@Override
-			public E next( )
+			public L next( )
 			{
 				actual = null;
 
@@ -337,7 +358,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 	 */
 	public Iterator<String> edges( )
 	{
-		return edges.keys( );
+		return null;
 	}
 
 	/**
@@ -350,7 +371,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, E
 		validateVertex( v );
 		return vertex.get( v ).numberOfItems( );
 	}
-	
+
 	/**
 	 * Valida un vértice.
 	 * @param v Vértice a validar.

@@ -5,9 +5,10 @@ import java.util.Iterator;
 /**
  * Interfaz que debe implementar la clase UndirectedGraph.
  * @author Camilo Martínez & Nicolás Quintero
+ * @param <K> Tipo de llave que se guardará en las tablas de hash con la información.
  * @param <V> Tipo de valor o item que se guardará en cada vertice.
  */
-public interface IGraph<K extends Comparable<K>, V extends Comparable<V>>
+public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>>
 {
 	public int numberOfVertices( );
 
@@ -27,14 +28,6 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>>
 	 * @return Costo del arco entre los vertices dados por parámetros.
 	 */
 	public double getEdgeDoubleCost( int v, int w );
-	
-	/**
-	 * Returns the vertices adjacent to the given vertex.
-	 * @param v the vertex.
-	 * @return the vertices adjacent to given vertex as an iterable.
-	 * @throws IllegalArgumentException if given vertex is not valid.
-	 */
-	public Iterable<Integer> adj( int v );
 
 	/**
 	 * Returns the degree of the given vertex.
@@ -75,4 +68,22 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>>
 	 *         igual al id del vertice.
 	 */
 	public Iterator<V> vertexItems( int v );
+	
+	/**
+	 * Iterador sobre todos los ID's de los vértices adyacentes al vértice cuyo ID
+	 * es dado por parámetro.
+	 * @param v ID del vértice a chequear sus adyacentes.
+	 * @return Vértices adyacentes al dado por parámetro en forma de iterador.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
+	 */
+	public Iterator<Integer> vertexAdjacentTo( int v ) throws IllegalArgumentException;
+	
+	/**
+	 * Iterador sobre todos los arcos adyacentes al vértice cuyo ID es dado por
+	 * parámetro.
+	 * @param v ID del vértice a chequear sus arcos adyacentes.
+	 * @return Arcos adyacentes al dado por parámetro en forma de iterable.
+	 * @throws IllegalArgumentException Si el vértice no es válido.
+	 */
+	public Iterable<Edge<K, V, L>> edgesAdjacentTo( int v ) throws IllegalArgumentException;
 }

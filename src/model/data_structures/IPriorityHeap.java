@@ -1,7 +1,7 @@
 package model.data_structures;
 
 /**
- * Interfaz que debe implementar la clase MaxHeap.
+ * Interfaz que debe implementar la clase MaxHeapPQ.
  * @author Camilo Martínez & Nicolás Quintero.
  */
 public interface IPriorityHeap<T extends Comparable<T>>
