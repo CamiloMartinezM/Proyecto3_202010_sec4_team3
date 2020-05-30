@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data_structures.MaxHeapPQ;
-import model.data_structures.MaxQueue;
 import model.data_structures.UndirectedGraph;
 
 /**
@@ -60,7 +59,7 @@ public class Modelo
 	/**
 	 * Cola de prioridad que guarda la información de las estaciones de policía.
 	 */
-	private MaxQueue<EstacionPolicia> estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
+	private MaxHeapPQ<EstacionPolicia> estaciones = new MaxHeapPQ<>( NUMERO_ESTACIONES_POLICIA );
 
 	/**
 	 * Heap de prioridad que guarda la información de los comparendos.
@@ -124,13 +123,10 @@ public class Modelo
 		if( grafoFD != null )
 		{
 			cargarEstacionesDePolicia( rutaArchivo );
-			EstacionPolicia e;
-			int verticeMasCercano;
 			while( !estaciones.isEmpty( ) )
 			{
-				e = estaciones.poll( );
-				verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
-				System.out.println( e.darId( ) + " - " + verticeMasCercano );
+				EstacionPolicia e = estaciones.poll( );
+				int verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
 			}
 		}
@@ -146,14 +142,12 @@ public class Modelo
 	{
 		if( grafoFD != null )
 		{
-			String arco;
-			int v, w;
 			Iterator<String> iter = grafoFD.edges( );
 			while( iter.hasNext( ) )
 			{
-				arco = iter.next( );
-				v = Integer.parseInt( arco.split( "-" )[0] );
-				w = Integer.parseInt( arco.split( "-" )[1] );
+				String arco = iter.next( );
+				int v = Integer.parseInt( arco.split( "-" )[0] );
+				int w = Integer.parseInt( arco.split( "-" )[1] );
 				grafoFD.setEdgeIntegerCost( v, w, grafoFD.numberOfItemsOf( v ) + grafoFD.numberOfItemsOf( w ) );
 			}
 		}
@@ -175,7 +169,6 @@ public class Modelo
 
 		InputStream is = new DataInputStream( new FileInputStream( rutaArchivo ) );
 		ObjectMapper mapper = new ObjectMapper( );
-		Comparendo c;
 
 		// Crea una instancia de JsonParser
 		try( JsonParser jsonParser = mapper.getFactory( ).createParser( is ) )
@@ -189,7 +182,7 @@ public class Modelo
 			// Itera los tokens hasta llegar al final del arreglo o ].
 			while( jsonParser.nextToken( ) != JsonToken.END_ARRAY )
 			{
-				c = mapper.readValue( jsonParser, Comparendo.class );
+				Comparendo c = mapper.readValue( jsonParser, Comparendo.class );
 				comparendos.insert( c ); // Inserta el comparendo deserializado en el heap de prioridad.
 			}
 		}
@@ -205,9 +198,6 @@ public class Modelo
 	public void cargarEstacionesDePolicia( String rutaArchivo ) throws IOException
 	{
 		ObjectMapper mapper = new ObjectMapper( );
-
-		estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
-
 		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		JsonNode n = mapper.readTree( jsonData );
 		Iterator<JsonNode> d = n.get( "features" ).elements( );
@@ -247,7 +237,6 @@ public class Modelo
 
 		grafoFD = new UndirectedGraph<>( numberOfVertices );
 
-		String info;
 		int id;
 		while( vertice != null )
 		{
@@ -255,7 +244,7 @@ public class Modelo
 
 			// Se quita el id de la línea y se queda con la latitud y longitud concatenadas
 			// con ",".
-			info = vertice.replaceFirst( id + ",", "" );
+			String info = vertice.replaceFirst( id + ",", "" );
 
 			// Se añade el vértice.
 			grafoFD.setVertexInfo( id, info );
@@ -268,31 +257,28 @@ public class Modelo
 		reader = new BufferedReader( new FileReader( rutaArchivoArcos ) );
 		String arco = reader.readLine( );
 
-		String[] linea;
-		String infoAdyacente, infoVertice;
 		int idAdyacente;
-		double costo, latitud, longitud, latitudAdyacente, longitudAdyacente;
 		while( arco != null )
 		{
 			if( !arco.startsWith( "#" ) )
 			{
-				linea = arco.split( " " );
+				String[] linea = arco.split( " " );
 
 				// Solo aparece el id del vértice y ninguno adyacente.
 				if( linea.length > 1 )
 				{
 					id = Integer.parseInt( linea[0] );
-					infoVertice = grafoFD.getVertexInfo( id );
-					longitud = Double.parseDouble( infoVertice.split( "," )[0] );
-					latitud = Double.parseDouble( infoVertice.split( "," )[1] );
+					String infoVertice = grafoFD.getVertexInfo( id );
+					double longitud = Double.parseDouble( infoVertice.split( "," )[0] );
+					double latitud = Double.parseDouble( infoVertice.split( "," )[1] );
 
 					for( int i = 1; i < linea.length; i++ )
 					{
 						idAdyacente = Integer.parseInt( linea[i] );
-						infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
-						longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
-						latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
-						costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
+						String infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
+						double longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
+						double latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
+						double costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
 
 						// Se añade el arco.
 						grafoFD.addEdge( id, idAdyacente, costo );

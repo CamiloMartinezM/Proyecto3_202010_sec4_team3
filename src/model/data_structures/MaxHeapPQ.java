@@ -28,7 +28,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public MaxHeapPQ( int heapCapacity )
 	{
-		heap = ( T[] ) new Comparable[heapCapacity];
+		heap = ( T[] ) new Comparable[heapCapacity + 1];
 		heapSize = 0;
 		this.heapCapacity = heapCapacity;
 	}
@@ -55,7 +55,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public void clear( )
 	{
-		for( int i = 0; i < heapCapacity; i++ )
+		for( int i = 0; i < heap.length; i++ )
 			heap[i] = null;
 
 		heapSize = 0;
@@ -78,7 +78,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 		if( isEmpty( ) )
 			return null;
 
-		return heap[0];
+		return heap[1];
 	}
 
 	/**
@@ -87,7 +87,11 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public T poll( )
 	{
-		return removeAt( 0 );
+		T max = heap[1];
+		exch( 1, heapSize-- );
+		sink( 1 );
+		heap[heapSize + 1] = null;
+		return max;
 	}
 
 	/**
@@ -97,7 +101,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public boolean contains( T elem )
 	{
-		for( int i = 0; i < heapSize; i++ )
+		for( int i = 1; i < heapSize; i++ )
 			if( heap[i].equals( elem ) )
 				return true;
 
@@ -111,11 +115,11 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	public void insert( T elem )
 	{
 		if( heapSize < heapCapacity )
-			heap[heapSize] = elem;
+			heap[++heapSize] = elem;
 		else
 			throw new IllegalStateException( "La capacidad del heap ha sido superada." );
 
-		swim( heapSize++ );
+		swim( heapSize );
 	}
 
 	/**
@@ -128,7 +132,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 		if( element == null )
 			return false;
 
-		for( int i = 0; i < heapSize; i++ )
+		for( int i = 1; i < heapSize; i++ )
 		{
 			if( element.equals( heap[i] ) )
 			{
@@ -170,15 +174,20 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 		// Chequea si el último momento fue removido
 		if( i == heapSize )
 			return removed;
-		
+
 		T elem = heap[i];
 
 		// Intenta sinking
-		sink( i );
-
-		// Si no funciona el sinking, se trata swimming
-		if( heap[i].equals( elem ) )
-			swim( i );
+		try
+		{
+			sink( i );
+		}
+		catch( Exception e )
+		{
+			// Si no funciona el sinking, se trata swimming
+			if( heap[i].equals( elem ) )
+				swim( i );
+		}
 
 		return removed;
 	}
@@ -214,7 +223,7 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public void swim( int k )
 	{
-		while( k > 0 && less( k / 2, k ) )
+		while( k > 1 && less( k / 2, k ) )
 		{
 			exch( k, k / 2 );
 			k = k / 2;
@@ -227,20 +236,18 @@ public class MaxHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public void sink( int k )
 	{
-		while( true )
+		while( 2 * k <= heapSize )
 		{
-			int left = 2 * k + 1; 
-			int right = 2 * k + 2; 
-			int smallest = left; 
+			int j = 2 * k;
 
-			if( right < heapSize && less( right, left ) )
-				smallest = right;
+			if( j < heapSize && less( j, j + 1 ) )
+				j++;
 
-			if( left >= heapSize || less( k, smallest ) )
+			if( !less( k, j ) )
 				break;
-			
-			exch( smallest, k );
-			k = smallest;
+
+			exch( k, j );
+			k = j;
 		}
 	}
 }

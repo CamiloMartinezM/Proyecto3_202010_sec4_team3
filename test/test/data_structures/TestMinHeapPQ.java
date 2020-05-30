@@ -40,6 +40,8 @@ public class TestMinHeapPQ
 	 */
 	public void setUp2( )
 	{
+		setUp1( );
+		
 		int min = 0;
 		int max = 100;
 		for( int i = 0; i < CAPACITY; i++ )
@@ -86,10 +88,13 @@ public class TestMinHeapPQ
 
 		assertEquals( "No insertó bien.", -3, heap.peek( ).intValue( ) );
 
-		heap.remove( -3 );
+		heap.poll( );
 
 		assertEquals( "No insertó bien.", -2, heap.peek( ).intValue( ) );
-		assertEquals( "No insertó bien.", -2, heap.peekPosition( 0 ).intValue( ) );
+		assertEquals( "No insertó bien.", -2, heap.peekPosition( 1 ).intValue( ) );
+		heap.poll( );
+		assertEquals( "No insertó bien.", -1, heap.peek( ).intValue( ) );
+		assertEquals( "No insertó bien.", -1, heap.peekPosition( 1 ).intValue( ) );
 	}
 
 	@Test
@@ -115,9 +120,9 @@ public class TestMinHeapPQ
 
 		setUp2( );
 
-		assertEquals( "Debió retornar -3.", -3, heap.peekPosition( 0 ).intValue( ) );
-		assertEquals( "Debió retornar -2.", -2, heap.peekPosition( 1 ).intValue( ) );
-		assertEquals( "Debió retornar -1.", -1, heap.peekPosition( 2 ).intValue( ) );
+		assertEquals( "Debió retornar -3.", -3, heap.peekPosition( 1 ).intValue( ) );
+		assertEquals( "Debió retornar -2.", -2, heap.peekPosition( 2 ).intValue( ) );
+		assertEquals( "Debió retornar -1.", -1, heap.peekPosition( 3 ).intValue( ) );
 	}
 
 	@Test
@@ -143,6 +148,15 @@ public class TestMinHeapPQ
 
 		assertEquals( "Debió retornar -3.", -3, heap.poll( ).intValue( ) );
 		assertEquals( "Debió retornar " + ( CAPACITY - 1 ), CAPACITY - 1, heap.getSize( ) );
+		assertEquals( "Debió retornar -2.", -2, heap.poll( ).intValue( ) );
+		assertEquals( "Debió retornar -1.", -1, heap.poll( ).intValue( ) );
+
+		setUp2( );
+		heap.poll( );
+
+		assertEquals( "Debió retornar -2.", -2, heap.poll( ).intValue( ) );
+		assertEquals( "Debió retornar -1.", -1, heap.poll( ).intValue( ) );
+		
 		assertEquals( "Debió retornar null.", null, heap.peekPosition( CAPACITY ) );
 	}
 
@@ -179,5 +193,13 @@ public class TestMinHeapPQ
 		heap.clear( );
 
 		assertEquals( "Debió retornar 0.", 0, heap.getSize( ) );
+	}
+	
+	public void TestSysout( )
+	{
+		setUp2( );
+		
+		for( int i = 0; i < CAPACITY; i++ )
+			System.out.println( heap.poll( ) );
 	}
 }
