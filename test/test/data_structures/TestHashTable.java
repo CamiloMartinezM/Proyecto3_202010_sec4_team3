@@ -13,7 +13,7 @@ import model.data_structures.HashTable;
 /**
  * Test de la implementación de una tabla de hash con encadenamiento separado
  * con una lista encadenada.
- * @author Camilo Martínez & Nicolás Quintero
+ * @author Camilo Martínez
  */
 public class TestHashTable
 {

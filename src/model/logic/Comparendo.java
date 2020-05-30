@@ -8,9 +8,36 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * Clase que maneja la información de un comparendo.
  * @author Camilo Martínez & Nicolás Quintero
  */
-@JsonDeserialize(using = DeserializadorJSON.class)
+@JsonDeserialize( using = DeserializadorJSON.class )
 public class Comparendo implements Comparable<Comparendo>
 {
+	/**
+	 * Tiene los posibles comparadores que se pueden utilizar.
+	 * Indica qué característica comparar.
+	 */
+	public enum Comparador
+	{
+		/**
+		 * Para saber si un comparendo es más grave que otro primero se mira el tipo de
+		 * servicio. Público es más grave que Oficial y Oficial es más grave que
+		 * Particular. Si dos comparendos tienen el mismo tipo de servicio se compara el
+		 * código de la infracción (campo INFRACCION) usando el orden lexicográfico
+		 * (forma de comparación de los Strings en Java, A12 es mas grave que A11 y B10
+		 * es más grave que A10).
+		 */
+		GRAVEDAD,
+
+		/**
+		 * Valor de latitud.
+		 */
+		LATITUD,
+
+		/**
+		 * Fecha-hora de los comparendos.
+		 */
+		FECHA_HORA
+	}
+
 	/**
 	 * Identificador único del comparendo. OBJECTID.
 	 */
@@ -57,6 +84,11 @@ public class Comparendo implements Comparable<Comparendo>
 	private double[] coordenada;
 
 	/**
+	 * Indica qué comparador es el actual.
+	 */
+	private Comparador comparador;
+
+	/**
 	 * Inicializa un comparendo con la información dada por parámetro.
 	 * @param id                    Identificador único del comparendo.
 	 * @param fecha                 Fecha del comparendo.
@@ -84,6 +116,7 @@ public class Comparendo implements Comparable<Comparendo>
 		this.descripcionInfraccion = causaInfraccion;
 		this.localidad = localidad;
 		this.coordenada = coordenada;
+		this.comparador = Comparador.GRAVEDAD; // Comparador predeterminado es la gravedad.
 	}
 
 	/**
@@ -274,14 +307,52 @@ public class Comparendo implements Comparable<Comparendo>
 		return cadena;
 	}
 
+	/**
+	 * Cambia el comparador actual por aquél dado por parámetro.
+	 * @param comparador Nuevo comparador. comparador = {LATITUD, GRAVEDAD}
+	 */
+	public void cambiarComparador( Comparador comparador )
+	{
+		this.comparador = comparador;
+	}
+
 	@Override
 	public int compareTo( Comparendo o )
 	{
-		if( this.id < o.darId( ) )
-			return -1;
-		else if( this.id > o.darId( ) )
-			return 1;
-		else
-			return 0;
+		if( comparador == Comparador.GRAVEDAD )
+		{
+			if( this.tipoServicio.equals( o.tipoServicio ) ) // Si son iguales.
+				return this.darCodigoInfraccion( ).compareTo( o.darCodigoInfraccion( ) );
+
+			if( this.tipoServicio.equals( "Público" )
+					&& ( o.tipoServicio.equals( "Oficial" ) || o.tipoServicio.equals( "Particular" ) ) )
+				return 1;
+			else if( this.tipoServicio.equals( "Oficial" ) && o.tipoServicio.equals( "Público" ) )
+				return -1;
+			else if( this.tipoServicio.equals( "Oficial" ) && o.tipoServicio.equals( "Particular" ) )
+				return 1;
+			else if( this.tipoServicio.equals( "Particular" )
+					&& ( o.tipoServicio.equals( "Público" ) || o.tipoServicio.equals( "Oficial" ) ) )
+				return -1;
+			else // No debe ocurrir.
+			{
+				System.out.println( "¡ERROR!" );
+				return 666;
+			}
+		}
+		else if( comparador == Comparador.LATITUD )
+			if( this.darLatitud( ) < o.darLatitud( ) )
+				return -1;
+			else if( this.darLatitud( ) > o.darLatitud( ) )
+				return 1;
+			else
+				return 0;
+		else if( comparador == Comparador.FECHA_HORA )
+			return this.fecha.compareTo( o.darFecha( ) );
+		else // No debe ocurrir.
+		{
+			System.out.println( "¡ERROR!" );
+			return 666;
+		}
 	}
 }

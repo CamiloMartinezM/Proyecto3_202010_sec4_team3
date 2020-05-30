@@ -11,7 +11,7 @@ import model.data_structures.MaxHeapPQ;
 
 /**
  * Test de la estructura de datos.
- * @author Camilo Martínez & Nicolás Quintero.
+ * @author Camilo Martínez
  */
 public class TestMaxHeap
 {
