@@ -9,7 +9,7 @@ import model.data_structures.LinkedList;
 
 /**
  * Test de la estructura de datos de lista enlazada.
- * @author Camilo Martínez & Nicolás Quintero
+ * @author Camilo Martínez
  */
 public class TestLinkedList
 {

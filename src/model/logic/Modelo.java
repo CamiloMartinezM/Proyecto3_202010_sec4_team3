@@ -102,10 +102,10 @@ public class Modelo
 		{
 			cargarComparendos( rutaArchivo );
 			Comparendo c;
-			int verticeMasCercano;
-			while( !comparendos.isEmpty( ) )
+			int verticeMasCercano, i = -1;
+			while( ++i < comparendos.getSize( ) )
 			{
-				c = comparendos.poll( );
+				c = comparendos.peekPosition( i );
 				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 5 );
 				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
@@ -130,6 +130,7 @@ public class Modelo
 			{
 				e = estaciones.poll( );
 				verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
+				System.out.println( e.darId( ) + " - " + verticeMasCercano );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
 			}
 		}

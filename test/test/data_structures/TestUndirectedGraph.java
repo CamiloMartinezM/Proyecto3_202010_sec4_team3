@@ -12,7 +12,7 @@ import model.data_structures.UndirectedGraph;
 
 /**
  * Test de la implementación del grafo no dirigido.
- * @author Camilo Martínez & Nicolás Quintero
+ * @author Camilo Martínez
  */
 public class TestUndirectedGraph
 {

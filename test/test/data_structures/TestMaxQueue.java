@@ -12,7 +12,7 @@ import model.data_structures.MaxQueue;
 
 /**
  * Test de la estructura de datos.
- * @author Camilo Martínez & Nicolás Quintero
+ * @author Camilo Martínez
  */
 public class TestMaxQueue
 {
