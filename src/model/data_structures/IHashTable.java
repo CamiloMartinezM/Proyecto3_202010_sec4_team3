@@ -4,7 +4,7 @@ package model.data_structures;
  * Interfaz que debe implementar las tablas de hash.
  * @author Camilo Martínez & Nicolás Quintero
  */
-public interface IHashTable<K extends Comparable<K>, V extends Comparable<V>>
+public interface IHashTable<K extends Comparable<K>, V extends Comparable<V>> extends Iterable<K>
 {
 	/**
 	 * @return Tamaño de la tabla de hash.

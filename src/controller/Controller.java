@@ -69,6 +69,7 @@ public class Controller
 					try
 					{
 						view.printMessage( "\nCargando comparendos...\n" );
+						view.printMessage( "+ Esto dura alrededor de 2 minutos, no se preocupe +\n" );
 						modelo.cargarComparendosEnGrafo( ARCHIVO_COMPARENDOS );
 						view.printMessage( "¡Los comparendos fueron cargados exitosamente!" );
 					}

@@ -13,7 +13,7 @@ import model.data_structures.MaxHeapPQ;
  * Test de la estructura de datos.
  * @author Camilo Martínez
  */
-public class TestMaxHeap
+public class TestMaxHeapPQ
 {
 	/**
 	 * Capacidad de la cola.
@@ -102,7 +102,7 @@ public class TestMaxHeap
 
 		assertEquals( "Debió retornar 103.", 103, heap.peek( ).intValue( ) );
 
-		heap.remove( 103 );
+		heap.poll( );
 		heap.insert( 104 );
 
 		assertEquals( "Debió retornar 103.", 104, heap.peek( ).intValue( ) );
@@ -144,6 +144,10 @@ public class TestMaxHeap
 
 		assertEquals( "Debió retornar 103.", 103, heap.poll( ).intValue( ) );
 		assertEquals( "Debió retornar " + ( CAPACITY - 1 ), CAPACITY - 1, heap.getSize( ) );
+		assertEquals( "Debió retornar 102.", 102, heap.poll( ).intValue( ) );
+		assertEquals( "Debió retornar 101.", 101, heap.poll( ).intValue( ) );
+		assertEquals( "Debió retornar " + ( CAPACITY - 3 ), CAPACITY - 3, heap.getSize( ) );
+
 		assertEquals( "Debió retornar null.", null, heap.peekPosition( CAPACITY ) );
 	}
 

@@ -22,8 +22,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.data_structures.HashTable;
 import model.data_structures.MaxHeapPQ;
-import model.data_structures.MaxQueue;
 import model.data_structures.UndirectedGraph;
 
 /**
@@ -32,6 +32,17 @@ import model.data_structures.UndirectedGraph;
  */
 public class Modelo
 {
+	private ArrayList<double[]> ultimas = new ArrayList<double[]>( );
+
+	private int z = 0;
+	
+	/**
+	 * Tamaño de las agrupaciones de los vértices en kilómetros. Representa la
+	 * distancia mínima entre vértices que debe haber para considerarse del mismo
+	 * grupo.
+	 */
+	private static final double TAMANIO_AGRUPACIONES = 2;
+
 	/**
 	 * Número de estaciones de policía.
 	 */
@@ -60,28 +71,40 @@ public class Modelo
 	/**
 	 * Cola de prioridad que guarda la información de las estaciones de policía.
 	 */
-	private MaxQueue<EstacionPolicia> estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
+	private MaxHeapPQ<EstacionPolicia> estaciones;
 
 	/**
 	 * Heap de prioridad que guarda la información de los comparendos.
 	 */
-	private MaxHeapPQ<Comparendo> comparendos = null;
+	private MaxHeapPQ<Comparendo> comparendos;
 
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
 	 */
-	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoFD = null;
+	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoFD;
 
 	/**
 	 * Grafo cargado a partir de un archivo JSON.
 	 */
-	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoJS = null;
+	private UndirectedGraph<String, Comparendo, EstacionPolicia> grafoJS;
+
+	/**
+	 * Agrupa los vértices más cercanos del grafo. La llave es la concatenación de
+	 * la latitud y longitud de un vértice representante del grupo y el valor es la
+	 * lista de ID's de los vértices del grupo.
+	 */
+	private HashTable<String, Integer> agrupacionesVertices;
 
 	/**
 	 * Constructor del modelo del mundo.
 	 */
 	public Modelo( )
 	{
+		estaciones = new MaxHeapPQ<>( NUMERO_ESTACIONES_POLICIA );
+		agrupacionesVertices = new HashTable<String, Integer>( 7 );
+		comparendos = null;
+		grafoFD = null;
+		grafoJS = null;
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------------
@@ -102,11 +125,12 @@ public class Modelo
 		{
 			cargarComparendos( rutaArchivo );
 			Comparendo c;
-			int verticeMasCercano, i = -1;
+			int verticeMasCercano;
+			int i = -1;
 			while( ++i < comparendos.getSize( ) )
 			{
 				c = comparendos.peekPosition( i );
-				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 5 );
+				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 0.5 );
 				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
 		}
@@ -124,13 +148,10 @@ public class Modelo
 		if( grafoFD != null )
 		{
 			cargarEstacionesDePolicia( rutaArchivo );
-			EstacionPolicia e;
-			int verticeMasCercano;
 			while( !estaciones.isEmpty( ) )
 			{
-				e = estaciones.poll( );
-				verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
-				System.out.println( e.darId( ) + " - " + verticeMasCercano );
+				EstacionPolicia e = estaciones.poll( );
+				int verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
 			}
 		}
@@ -146,14 +167,12 @@ public class Modelo
 	{
 		if( grafoFD != null )
 		{
-			String arco;
-			int v, w;
 			Iterator<String> iter = grafoFD.edges( );
 			while( iter.hasNext( ) )
 			{
-				arco = iter.next( );
-				v = Integer.parseInt( arco.split( "-" )[0] );
-				w = Integer.parseInt( arco.split( "-" )[1] );
+				String arco = iter.next( );
+				int v = Integer.parseInt( arco.split( "-" )[0] );
+				int w = Integer.parseInt( arco.split( "-" )[1] );
 				grafoFD.setEdgeIntegerCost( v, w, grafoFD.numberOfItemsOf( v ) + grafoFD.numberOfItemsOf( w ) );
 			}
 		}
@@ -175,7 +194,6 @@ public class Modelo
 
 		InputStream is = new DataInputStream( new FileInputStream( rutaArchivo ) );
 		ObjectMapper mapper = new ObjectMapper( );
-		Comparendo c;
 
 		// Crea una instancia de JsonParser
 		try( JsonParser jsonParser = mapper.getFactory( ).createParser( is ) )
@@ -189,7 +207,7 @@ public class Modelo
 			// Itera los tokens hasta llegar al final del arreglo o ].
 			while( jsonParser.nextToken( ) != JsonToken.END_ARRAY )
 			{
-				c = mapper.readValue( jsonParser, Comparendo.class );
+				Comparendo c = mapper.readValue( jsonParser, Comparendo.class );
 				comparendos.insert( c ); // Inserta el comparendo deserializado en el heap de prioridad.
 			}
 		}
@@ -205,9 +223,6 @@ public class Modelo
 	public void cargarEstacionesDePolicia( String rutaArchivo ) throws IOException
 	{
 		ObjectMapper mapper = new ObjectMapper( );
-
-		estaciones = new MaxQueue<>( NUMERO_ESTACIONES_POLICIA );
-
 		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		JsonNode n = mapper.readTree( jsonData );
 		Iterator<JsonNode> d = n.get( "features" ).elements( );
@@ -247,7 +262,6 @@ public class Modelo
 
 		grafoFD = new UndirectedGraph<>( numberOfVertices );
 
-		String info;
 		int id;
 		while( vertice != null )
 		{
@@ -255,7 +269,39 @@ public class Modelo
 
 			// Se quita el id de la línea y se queda con la latitud y longitud concatenadas
 			// con ",".
-			info = vertice.replaceFirst( id + ",", "" );
+			String info = vertice.replaceFirst( id + ",", "" );
+
+			if( agrupacionesVertices.isEmpty( ) )
+				agrupacionesVertices.put( info, id );
+			else
+			{
+				double latitud = Double.parseDouble( info.split( "," )[1] );
+				double longitud = Double.parseDouble( info.split( "," )[0] );
+				double distanciaMenor = 10000.0; // Distancia obviamente mayor que las demás.
+				double latitudMenor = -1, longitudMenor = -1;
+				for( String verticeRepresentante : agrupacionesVertices )
+				{
+					double latitudA = Double.parseDouble( verticeRepresentante.split( "," )[1] );
+					double longitudA = Double.parseDouble( verticeRepresentante.split( "," )[0] );
+					double distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
+
+					if( distanciaMenor > distanciaActual )
+					{
+						distanciaMenor = distanciaActual;
+						latitudMenor = latitudA;
+						longitudMenor = longitudA;
+					}
+				}
+
+				// Si la distancia menor se pasa del límite, se crea un
+				// nuevo grupo.
+				if( distanciaMenor > TAMANIO_AGRUPACIONES )
+					agrupacionesVertices.put( longitud + "," + latitud, id );
+				// Si no, se añade el ID a la llave con la latitud y longitud correspondientes
+				// al vértice representante del grupo, con el cual posee la menor distancia.
+				else
+					agrupacionesVertices.put( longitudMenor + "," + latitudMenor, id );
+			}
 
 			// Se añade el vértice.
 			grafoFD.setVertexInfo( id, info );
@@ -268,31 +314,28 @@ public class Modelo
 		reader = new BufferedReader( new FileReader( rutaArchivoArcos ) );
 		String arco = reader.readLine( );
 
-		String[] linea;
-		String infoAdyacente, infoVertice;
 		int idAdyacente;
-		double costo, latitud, longitud, latitudAdyacente, longitudAdyacente;
 		while( arco != null )
 		{
 			if( !arco.startsWith( "#" ) )
 			{
-				linea = arco.split( " " );
+				String[] linea = arco.split( " " );
 
 				// Solo aparece el id del vértice y ninguno adyacente.
 				if( linea.length > 1 )
 				{
 					id = Integer.parseInt( linea[0] );
-					infoVertice = grafoFD.getVertexInfo( id );
-					longitud = Double.parseDouble( infoVertice.split( "," )[0] );
-					latitud = Double.parseDouble( infoVertice.split( "," )[1] );
+					String infoVertice = grafoFD.getVertexInfo( id );
+					double longitud = Double.parseDouble( infoVertice.split( "," )[0] );
+					double latitud = Double.parseDouble( infoVertice.split( "," )[1] );
 
 					for( int i = 1; i < linea.length; i++ )
 					{
 						idAdyacente = Integer.parseInt( linea[i] );
-						infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
-						longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
-						latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
-						costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
+						String infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
+						double longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
+						double latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
+						double costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
 
 						// Se añade el arco.
 						grafoFD.addEdge( id, idAdyacente, costo );
@@ -409,36 +452,83 @@ public class Modelo
 	 * <b>pre:</b> grafoFD ya ha sido inicializado.
 	 * @param latitud  Latitud a buscar más cercana.
 	 * @param longitud Longitud a buscar más cercana.
+	 * @param error    Tolerancia permitida en km.
 	 * @return id del vertice.
 	 */
 	public int darVerticeMasCercanoA( double latitud, double longitud, double error )
 	{
-		int id = 0;
-		int i = 0;
-		String infoVertice;
-		double latitudA, longitudA, distanciaMenor = 0, distanciaActual;
-		while( i < grafoFD.numberOfVertices( ) )
+		for( double[] c : ultimas )
 		{
-			infoVertice = grafoFD.getVertexInfo( i );
+			if( Haversine.distance( latitud, longitud, c[1], c[0]) <= error )
+				return ( int ) c[2];
+		}
+		
+		int idVerticeMasCercano = -1, idActual;
+
+		double distanciaMenor = 10000.0, longitudA, latitudA, distanciaActual;
+		String verticeRepresentanteGrupo = null;
+
+		// Se busca la agrupación cuyo vértice representante está más cerca de la
+		// latitud y longitud dadas por parámetro.
+		for( String verticeRepresentante : agrupacionesVertices )
+		{
+			longitudA = Double.parseDouble( verticeRepresentante.split( "," )[0] );
+			latitudA = Double.parseDouble( verticeRepresentante.split( "," )[1] );
+			distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
+
+			if( distanciaActual < distanciaMenor )
+			{
+				distanciaMenor = distanciaActual;
+				verticeRepresentanteGrupo = verticeRepresentante;
+			}
+		}
+
+		// Se itera entre los vértices de la agrupación más cercana y se añade el
+		// comparendo al más cercano.
+		distanciaMenor = 10000.0;
+		String infoVertice;
+		double longitudMenor = 0, latitudMenor = 0;
+		Iterator<Integer> iter = agrupacionesVertices.valuesOf( verticeRepresentanteGrupo );
+		while( iter.hasNext( ) )
+		{
+			idActual = iter.next( );
+			infoVertice = grafoFD.getVertexInfo( idActual );
 			longitudA = Double.parseDouble( infoVertice.split( "," )[0] );
 			latitudA = Double.parseDouble( infoVertice.split( "," )[1] );
 			distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
 
+			// Tolerancia.
 			if( distanciaActual <= error )
 			{
-				id = i;
+				idVerticeMasCercano = idActual;
+				longitudMenor = longitudA;
+				latitudMenor = latitudA;
 				break;
 			}
 
 			if( distanciaActual < distanciaMenor )
 			{
 				distanciaMenor = distanciaActual;
-				id = i;
+				longitudMenor = longitudA;
+				latitudMenor = latitudA;
+				idVerticeMasCercano = idActual;
 			}
-			i++;
 		}
 
-		return id;
+		if( ultimas.size( ) < 20 )
+			ultimas.add( new double[] { longitudMenor, latitudMenor, idVerticeMasCercano } );
+		else
+		{
+			if( z < ultimas.size( ) )
+			{
+				ultimas.set( z, new double[] { longitudMenor, latitudMenor, idVerticeMasCercano } );
+				z++;
+			}
+			else
+				z = 0;
+		}
+
+		return idVerticeMasCercano;
 	}
 
 	/**
@@ -449,16 +539,15 @@ public class Modelo
 		if( grafoFD != null && grafoFD.numberOfStoredItems( ) != 0 )
 		{
 			int i = 0;
-			Comparendo c;
 			Comparendo mayor = null;
 			while( i < grafoFD.numberOfVertices( ) )
 			{
 				Iterator<Comparendo> iter = grafoFD.vertexItems( i );
 				while( iter.hasNext( ) )
 				{
-					c = iter.next( );
+					Comparendo c = iter.next( );
 
-					if( mayor == null || ( c != null && c.darId( ) > mayor.darId( ) ) )
+					if( mayor == null || ( c.darId( ) > mayor.darId( ) ) )
 						mayor = c;
 				}
 				i++;
@@ -477,13 +566,12 @@ public class Modelo
 	{
 		if( grafoFD != null && grafoFD.numberOfStoredItems( ) != 0 )
 		{
-			EstacionPolicia e;
 			EstacionPolicia mayor = null;
 
 			Iterator<EstacionPolicia> iter = grafoFD.distinctiveItems( );
 			while( iter.hasNext( ) )
 			{
-				e = iter.next( );
+				EstacionPolicia e = iter.next( );
 				if( mayor == null || ( e != null && e.darId( ) > mayor.darId( ) ) )
 					mayor = e;
 			}
@@ -675,11 +763,10 @@ public class Modelo
 	public String construirComponente( String cadenaEnBruto, ArrayList<String[]> remplazo )
 	{
 		String cadena = cadenaEnBruto;
-		String original, nueva;
 		for( int i = 0; i < remplazo.size( ); i++ )
 		{
-			original = remplazo.get( i )[0];
-			nueva = remplazo.get( i )[1];
+			String original = remplazo.get( i )[0];
+			String nueva = remplazo.get( i )[1];
 			cadena = cadena.replace( original, nueva );
 		}
 

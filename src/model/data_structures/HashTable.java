@@ -435,4 +435,10 @@ public class HashTable<K extends Comparable<K>, V extends Comparable<V>> impleme
 
 		return containingNode( key ).getListOfItems( ).iterator( );
 	}
+
+	@Override
+	public Iterator<K> iterator( )
+	{
+		return keys( );
+	}
 }

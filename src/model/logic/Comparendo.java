@@ -35,7 +35,12 @@ public class Comparendo implements Comparable<Comparendo>
 		/**
 		 * Fecha-hora de los comparendos.
 		 */
-		FECHA_HORA
+		FECHA_HORA,
+		
+		/**
+		 * ID de los comparendos.
+		 */
+		ID
 	}
 
 	/**
@@ -116,7 +121,7 @@ public class Comparendo implements Comparable<Comparendo>
 		this.descripcionInfraccion = causaInfraccion;
 		this.localidad = localidad;
 		this.coordenada = coordenada;
-		this.comparador = Comparador.GRAVEDAD; // Comparador predeterminado es la gravedad.
+		this.comparador = Comparador.LATITUD; // Comparador predeterminado es la gravedad.
 	}
 
 	/**
@@ -341,12 +346,23 @@ public class Comparendo implements Comparable<Comparendo>
 			}
 		}
 		else if( comparador == Comparador.LATITUD )
+		{
 			if( this.darLatitud( ) < o.darLatitud( ) )
 				return -1;
 			else if( this.darLatitud( ) > o.darLatitud( ) )
 				return 1;
 			else
 				return 0;
+		}
+		else if( comparador == Comparador.ID )
+		{
+			if( this.id < o.darId( ) )
+				return -1;
+			else if( this.id > o.darId( ) )
+				return 1;
+			else
+				return 0;
+		}
 		else if( comparador == Comparador.FECHA_HORA )
 			return this.fecha.compareTo( o.darFecha( ) );
 		else // No debe ocurrir.

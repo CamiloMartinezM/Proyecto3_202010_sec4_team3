@@ -47,7 +47,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	 * Tabla de hash que contiene los vértices. La llave es el ID del vértice y el
 	 * valor un objeto de tipo Vertex.
 	 */
-	private HashTable<Integer, Vertex<K, V, L>> vertex;
+	public HashTable<Integer, Vertex<K, V, L>> vertex;
 
 	/**
 	 * Inicializa un grafo con el número de vértices dados por parámetro y 0 arcos.
@@ -64,7 +64,7 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 		this.D = 0;
 		this.S = 0;
 
-		this.vertex = new HashTable<>( 997, true );
+		this.vertex = new HashTable<>( 24007, true );
 
 		adj = ( Bag<Edge<K, V, L>>[] ) new Bag[numberOfVertices];
 		for( int v = 0; v < numberOfVertices; v++ )
@@ -184,7 +184,6 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	 */
 	public void insertVertexItem( int v, K key, V item )
 	{
-		validateVertex( v );
 		if( !vertex.contains( v ) )
 		{
 			Vertex<K, V, L> v1 = new Vertex<>( v );
@@ -225,13 +224,12 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	}
 
 	/**
-	 * @param v Vertice.
+	 * @param v Vértice. validateVertex( v ) debe retornar True.
 	 * @return Información del vértice.
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
 	public String getVertexInfo( int v ) throws IllegalArgumentException
 	{
-		validateVertex( v );
 		return vertex.get( v ).getInfo( );
 	}
 
@@ -358,7 +356,55 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	 */
 	public Iterator<String> edges( )
 	{
-		return null;
+		return new Iterator<String>( )
+		{
+			private String actual = "";
+			private int i = -1;
+			private int numArcosRevisados = 0;
+			private Iterator<Edge<K, V, L>> bolsaActual = null;
+			private HashTable<String, Integer> arcosYaRevisados = new HashTable<String, Integer>( E, true );
+
+			@Override
+			public boolean hasNext( )
+			{
+				return numArcosRevisados < E;
+			}
+
+			@Override
+			public String next( )
+			{
+				if( actual == "" || bolsaActual == null || !bolsaActual.hasNext( ) )
+					buscarSiguientePosicionI( );
+
+				boolean primeraVez = true;
+				while( arcosYaRevisados.contains( actual ) || primeraVez )
+				{
+					primeraVez = false;
+					if( !bolsaActual.hasNext( ) )
+						buscarSiguientePosicionI( );
+
+					Edge<K, V, L> e = bolsaActual.next( );
+					actual = e.either( ) + "-" + e.other( e.either( ) );
+				}
+
+				arcosYaRevisados.put( actual, 0 );
+
+				numArcosRevisados++;
+				return actual;
+			}
+
+			private void buscarSiguientePosicionI( )
+			{
+				while( ++i < adj.length )
+				{
+					if( adj[i].size( ) > 0 )
+					{
+						bolsaActual = adj[i].iterator( );
+						break;
+					}
+				}
+			}
+		};
 	}
 
 	/**

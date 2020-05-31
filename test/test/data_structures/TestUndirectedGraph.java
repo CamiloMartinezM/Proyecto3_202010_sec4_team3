@@ -2,6 +2,7 @@ package test.data_structures;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 
 import org.junit.Before;
@@ -39,7 +40,7 @@ public class TestUndirectedGraph
 	public void setUp2( )
 	{
 		setUp( );
-		
+
 		grafo.addEdge( 1, 2, Math.sqrt( 1 + 2 * 2 ) );
 		grafo.addEdge( 1, 3, Math.sqrt( 1 + 3 * 3 ) );
 		grafo.addEdge( 1, 5, Math.sqrt( 1 + 5 * 5 ) );
@@ -79,7 +80,7 @@ public class TestUndirectedGraph
 		assertEquals( "No agregó correctamente los arcos.", 1, grafo.numberOfEdges( ) );
 
 		setUp2( );
-		
+
 		grafo.addEdge( 0, 1, 10.0 );
 		assertEquals( "No agregó correctamente los arcos.", 11, grafo.numberOfEdges( ) );
 		assertEquals( "No guardó bien el costo.", 10.0 + "", grafo.getEdgeDoubleCost( 0, 1 ) + "" );
@@ -142,70 +143,70 @@ public class TestUndirectedGraph
 			int w = iter.next( );
 			if( w != 2 && w != 3 && w != 5 && w != 4 )
 				fail( "Falló al encontrar los adyacentes de 1." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 2 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 1 && w != 3 )
 				fail( "Falló al encontrar los adyacentes de 2." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 3 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 2 && w != 1 && w != 5 )
 				fail( "Falló al encontrar los adyacentes de 3." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 4 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 1 && w != 6 && w != 7 )
 				fail( "Falló al encontrar los adyacentes de 4." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 5 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 3 && w != 1 )
 				fail( "Falló al encontrar los adyacentes de 5." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 6 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 4 && w != 7 )
 				fail( "Falló al encontrar los adyacentes de 6." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 7 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 4 && w != 6 && w != 8 )
 				fail( "Falló al encontrar los adyacentes de 7." );
-				
+
 		}
-		
+
 		iter = grafo.vertexAdjacentTo( 8 );
 		while( iter.hasNext( ) )
 		{
 			int w = iter.next( );
 			if( w != 7 )
 				fail( "Falló al encontrar los adyacentes de 8." );
-				
+
 		}
 	}
 
@@ -273,5 +274,46 @@ public class TestUndirectedGraph
 	{
 		for( int i = 0; i < V; i++ )
 			assertEquals( "No debería haber items en ningún vertice.", false, grafo.vertexItems( i ).hasNext( ) );
+	}
+
+	@Test
+	public void TestEdges( )
+	{
+		setUp2( );
+
+		ArrayList<int[]> arcosAgregados = new ArrayList<>( );
+		arcosAgregados.add( new int[] { 1, 2 } );
+		arcosAgregados.add( new int[] { 1, 3 } );
+		arcosAgregados.add( new int[] { 1, 5 } );
+		arcosAgregados.add( new int[] { 1, 4 } );
+		arcosAgregados.add( new int[] { 2, 3 } );
+		arcosAgregados.add( new int[] { 3, 5 } );
+		arcosAgregados.add( new int[] { 4, 6 } );
+		arcosAgregados.add( new int[] { 4, 7 } );
+		arcosAgregados.add( new int[] { 7, 6 } );
+		arcosAgregados.add( new int[] { 7, 8 } );
+
+		Iterator<String> iter = grafo.edges( );
+		while( iter.hasNext( ) )
+		{
+			String arcoActual = iter.next( );			
+			boolean entro = false;
+			for( int i = 0; i < arcosAgregados.size( ); i++ )
+			{
+				int[] arcoPosible = arcosAgregados.get( i );
+				String a1 = arcoPosible[0] + "-" + arcoPosible[1];
+				String a2 = arcoPosible[1] + "-" + arcoPosible[0];
+						
+				if( arcoActual.equals( a1 ) || arcoActual.equals( a2 ) )
+				{
+					arcosAgregados.remove( arcoPosible );
+					entro = true;
+					break;
+				}
+			}
+			
+			if( !entro )
+				fail( "No se encontró el arco " + arcoActual );
+		}
 	}
 }
