@@ -1,5 +1,6 @@
 package model.logic;
 
+import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -22,7 +23,9 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.data_structures.Edge;
 import model.data_structures.HashTable;
+import model.data_structures.IGraph;
 import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
 import model.data_structures.UndirectedGraph;
@@ -31,12 +34,15 @@ import model.data_structures.UndirectedGraph;
  * Definición del modelo del mundo.
  * @author Camilo Martínez & Nicolás Quintero
  */
+@SuppressWarnings( "rawtypes" )
 public class Modelo
 {
+	/**
+	 * Variables diseñadas para hacer más rápida la carga de comparendos.
+	 */
 	private ArrayList<double[]> ultimas = new ArrayList<double[]>( );
-
 	private int z = 0;
-	
+
 	/**
 	 * Tamaño de las agrupaciones de los vértices en kilómetros. Representa la
 	 * distancia mínima entre vértices que debe haber para considerarse del mismo
@@ -57,17 +63,19 @@ public class Modelo
 	/**
 	 * Constantes para la construcción del HTML para pintar el grafo.
 	 */
+	private static final String GRAFO_GOOGLE_MAPS = "./data/grafo.html";
 	private static final String APERTURA_HTML = "./data/HTML/Javascript_Inicio.txt";
 	private static final String CIERRE_HTML = "./data/HTML/Javascript_Final.txt";
 	private static final String APERTURA_SCRIPT = "./data/HTML/inicio_html.txt";
 	private static final String CIERRE_SCRIPT = "./data/HTML/final_html.txt";
-	// private static final String MARCADOR = "./data/HTML/definicion_marcador.txt";
 	private static final String CIRCULO = "./data/HTML/definicion_circulo.txt";
 	private static final String LINEA = "./data/HTML/definicion_linea.txt";
 	private static final String POSICION_LATITUD = "4.609537";
 	private static final String POSICION_LONGITUD = "-74.078715";
-	private static final String VALOR_ZOOM = "13";
-	private static final String VALOR_RADIO = "25";
+	private static final double VALOR_ZOOM = 13.0;
+	private static final double VALOR_RADIO = 200;
+	private static String CIRCULO_BRUTO;
+	private static String LINEA_BRUTA;
 
 	/**
 	 * Cola de prioridad que guarda la información de las estaciones de policía.
@@ -97,15 +105,36 @@ public class Modelo
 	private HashTable<String, Integer> agrupacionesVertices;
 
 	/**
-	 * Constructor del modelo del mundo.
+	 * Hex-Colores usados para pintar los componentes conexos.
 	 */
-	public Modelo( )
+	private String[] colores;
+
+	/**
+	 * Constructor del modelo del mundo.
+	 * @throws IOException Si hubo un problema leyendo los archivos plantilla para
+	 *                     pintar en Google Maps.
+	 */
+	public Modelo( ) throws IOException
 	{
-		estaciones = new MaxHeapPQ<>( NUMERO_ESTACIONES_POLICIA );
+		estaciones = null;
 		agrupacionesVertices = new HashTable<String, Integer>( 7 );
 		comparendos = null;
 		grafoFD = null;
 		grafoJS = null;
+
+		// Lectura de formatos/plantillas para pintar en Google Maps.
+		CIRCULO_BRUTO = leerArchivo( CIRCULO );
+		LINEA_BRUTA = leerArchivo( LINEA );
+
+		// Colores random para cada una de las estaciones.
+		colores = new String[NUMERO_ESTACIONES_POLICIA];
+		for( int i = 0; i < NUMERO_ESTACIONES_POLICIA; i++ )
+		{
+			int r = ( int ) Math.round( Math.random( ) * 255 );
+			int g = ( int ) Math.round( Math.random( ) * 255 );
+			int b = ( int ) Math.round( Math.random( ) * 255 );
+			colores[i] = String.format( "#%02X%02X%02X", r, g, b );
+		}
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------------
@@ -149,9 +178,10 @@ public class Modelo
 		if( grafoFD != null )
 		{
 			cargarEstacionesDePolicia( rutaArchivo );
-			while( !estaciones.isEmpty( ) )
+			int i = -1;
+			while( ++i < estaciones.getSize( ) )
 			{
-				EstacionPolicia e = estaciones.poll( );
+				EstacionPolicia e = estaciones.peekPosition( i );
 				int verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
 			}
@@ -223,6 +253,8 @@ public class Modelo
 	 */
 	public void cargarEstacionesDePolicia( String rutaArchivo ) throws IOException
 	{
+		estaciones = new MaxHeapPQ<>( NUMERO_ESTACIONES_POLICIA );
+
 		ObjectMapper mapper = new ObjectMapper( );
 		byte[] jsonData = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		JsonNode n = mapper.readTree( jsonData );
@@ -262,7 +294,8 @@ public class Modelo
 		String vertice = reader.readLine( );
 
 		grafoFD = new UndirectedGraph<>( numberOfVertices );
-
+		double latitud, longitud, distanciaMenor, latitudMenor, longitudMenor, latitudA, longitudA, distanciaActual,
+				longitudAdyacente, latitudAdyacente, costo;
 		int id;
 		while( vertice != null )
 		{
@@ -276,15 +309,16 @@ public class Modelo
 				agrupacionesVertices.put( info, id );
 			else
 			{
-				double latitud = Double.parseDouble( info.split( "," )[1] );
-				double longitud = Double.parseDouble( info.split( "," )[0] );
-				double distanciaMenor = 10000.0; // Distancia obviamente mayor que las demás.
-				double latitudMenor = -1, longitudMenor = -1;
+				latitud = Double.parseDouble( info.split( "," )[1] );
+				longitud = Double.parseDouble( info.split( "," )[0] );
+				distanciaMenor = 10000.0; // Distancia obviamente mayor que las demás.
+				latitudMenor = -1;
+				longitudMenor = -1;
 				for( String verticeRepresentante : agrupacionesVertices )
 				{
-					double latitudA = Double.parseDouble( verticeRepresentante.split( "," )[1] );
-					double longitudA = Double.parseDouble( verticeRepresentante.split( "," )[0] );
-					double distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
+					latitudA = Double.parseDouble( verticeRepresentante.split( "," )[1] );
+					longitudA = Double.parseDouble( verticeRepresentante.split( "," )[0] );
+					distanciaActual = Haversine.distance( latitud, longitud, latitudA, longitudA );
 
 					if( distanciaMenor > distanciaActual )
 					{
@@ -327,16 +361,16 @@ public class Modelo
 				{
 					id = Integer.parseInt( linea[0] );
 					String infoVertice = grafoFD.getVertexInfo( id );
-					double longitud = Double.parseDouble( infoVertice.split( "," )[0] );
-					double latitud = Double.parseDouble( infoVertice.split( "," )[1] );
+					longitud = Double.parseDouble( infoVertice.split( "," )[0] );
+					latitud = Double.parseDouble( infoVertice.split( "," )[1] );
 
 					for( int i = 1; i < linea.length; i++ )
 					{
 						idAdyacente = Integer.parseInt( linea[i] );
 						String infoAdyacente = grafoFD.getVertexInfo( idAdyacente );
-						double longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
-						double latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
-						double costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
+						longitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[0] );
+						latitudAdyacente = Double.parseDouble( infoAdyacente.split( "," )[1] );
+						costo = Haversine.distance( latitud, longitud, latitudAdyacente, longitudAdyacente );
 
 						// Se añade el arco.
 						grafoFD.addEdge( id, idAdyacente, costo );
@@ -445,6 +479,216 @@ public class Modelo
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------------
+	// PARTE C
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * PARTE C. Punto 2.
+	 * @return Grafo de las zonas de impacto.
+	 */
+	public UndirectedGraph<?, ?, Integer> crearGrafoDeZonasDeImpacto( )
+	{
+		// Grafo cuyos vértices contienen o la información de una estación de policía o
+		// la información del número de comparendos contenidos en ellos. El elemento
+		// distintivo de un vértice de un grafo es un entero que posee la cantidad de
+		// comparendos guardados en ellos. En el caso de la estación de policía, tendrá
+		// el número de comparendos que son atendidos por esta.
+		UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
+
+		// Se inserta la información de las estaciones en los vértices 0 a
+		// NUMERO_ESTACIONES_POLICIA - 1.
+		for( int i = 0; i < NUMERO_ESTACIONES_POLICIA; i++ )
+		{
+			g.setVertexInfo( i,
+					estaciones.peekPosition( i ).darLongitud( ) + "," + estaciones.peekPosition( i ).darLatitud( ) );
+			g.setVertexDistinctiveItem( i, 0 );
+		}
+
+		int i = -1;
+		while( ++i < grafoFD.numberOfVertices( ) )
+		{
+			// Mientras que haya comparendos dentro de un vértice.
+			if( grafoFD.numberOfItemsOf( i ) != 0 )
+			{
+				int idEstacionMasCercana = -1;
+				double distanciaMenor = 10000.0;
+
+				// Se busca la estación cuya distancia sea la menor.
+				for( int j = 0; j < NUMERO_ESTACIONES_POLICIA; j++ )
+				{
+					double latitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[1] );
+					double longitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[0] );
+					double distanciaActual = Haversine.distance( estaciones.peekPosition( j ).darLatitud( ),
+							estaciones.peekPosition( j ).darLongitud( ), latitud, longitud );
+
+					if( distanciaActual < distanciaMenor )
+					{
+						distanciaMenor = distanciaActual;
+						idEstacionMasCercana = j;
+					}
+				}
+
+				// Se agrega la información del vértice.
+				g.setVertexInfo( i, grafoFD.getVertexInfo( i ) );
+
+				// Se agrega a la estación el comparendo actual y el costo entero del arco que
+				// los une es el número de comparendos dentro del vértice.
+				g.addEdge( idEstacionMasCercana, i, distanciaMenor );
+				g.setEdgeIntegerCost( idEstacionMasCercana, i, grafoFD.numberOfItemsOf( i ) );
+
+				// Se aumenta el número de comparendos atendidos en la estación.
+				g.setVertexDistinctiveItem( idEstacionMasCercana,
+						g.getVertexDistinctiveItem( idEstacionMasCercana ) + grafoFD.numberOfItemsOf( i ) );
+			}
+		}
+
+		return g;
+	}
+
+	/**
+	 * PARTE C. Punto 2.
+	 * @return Reporte con la información solicitada.
+	 * @throws IOException Si hay algún problema de lectura de archivos.
+	 */
+	public String identificarZonasDeImpacto( ) throws IOException
+	{
+		String reporte = "";
+
+		Stopwatch timer = new Stopwatch( );
+		UndirectedGraph<?, ?, Integer> g = crearGrafoDeZonasDeImpacto( );
+		reporte += "Tiempo que toma el algoritmo en crear el grafo: " + timer.elapsedTime( ) + " ms\n";
+		reporte += "Número de vértices del grafo: " + g.numberOfVertices( ) + "\n";
+		reporte += "Número de arcos del grafo: " + g.numberOfEdges( ) + "\n\n";
+		for( int i = 0; i < NUMERO_ESTACIONES_POLICIA; i++ )
+		{
+			reporte += "Cantidad de comparendos que atiende la estación de ID " + estaciones.peekPosition( i ).darId( )
+					+ ": " + g.getVertexDistinctiveItem( i ) + "\n";
+		}
+
+		pintarZonasDeImpactoGoogleMaps( g );
+		return reporte;
+	}
+
+	/**
+	 * PARTE C. Punto 2.
+	 * @return Reporte con la información solicitada.
+	 * @throws IOException Si hay un problema en la lectura de algún archivo.
+	 */
+	public void pintarZonasDeImpactoGoogleMaps( UndirectedGraph<?, ?, Integer> g ) throws IOException
+	{
+		FileWriter w = inicializarHTML( );
+
+		// Se itera sobre los vertices.
+		int i = -1;
+		while( ++i < NUMERO_ESTACIONES_POLICIA )
+		{
+			String infoVertice = g.getVertexInfo( i );
+			String latitud1 = infoVertice.split( "," )[1];
+			String longitud1 = infoVertice.split( "," )[0];
+
+			// Se cuentan los comparendos contenidos en esta estación.
+			double incrementador = 3 * ( 1 + g.getVertexDistinctiveItem( i ) / grafoFD.numberOfStoredItems( ) );
+
+			w = pintarUnCirculo( w, VALOR_RADIO * incrementador, colores[i], latitud1, longitud1 );
+
+			// Se itera sobre las adyacencias.
+			for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
+			{
+				String latitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[1];
+				String longitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[0];
+				w = pintarUnaLinea( w, colores[i], latitud1, longitud1, latitud2, longitud2 );
+				w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[i], latitud2, longitud2 );
+			}
+
+			i++;
+		}
+
+		finalizarHTML( w );
+		abrirGrafoEnNavegador( );
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------
+	// PINTAR EN GOOGLE MAPS
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	public FileWriter inicializarHTML( ) throws IOException
+	{
+		File f = new File( GRAFO_GOOGLE_MAPS );
+		FileWriter w = new FileWriter( f, false );
+
+		// Principio del archivo HTML.
+		String apertura = leerArchivo( APERTURA_HTML );
+		w.append( apertura + "\n" );
+
+		// Principio del script.
+		apertura = leerArchivo( APERTURA_SCRIPT );
+		apertura = apertura.replace( "VALOR_ZOOM", String.valueOf( VALOR_ZOOM ) );
+		apertura = apertura.replace( "LATITUD", POSICION_LATITUD );
+		apertura = apertura.replace( "LONGITUD", POSICION_LONGITUD );
+
+		w.append( apertura + "\n" );
+
+		return w;
+	}
+
+	public void finalizarHTML( FileWriter w ) throws IOException
+	{
+		// Cierre del script.
+		String cierre = leerArchivo( CIERRE_SCRIPT );
+
+		w.append( cierre + "\n" );
+
+		// Final del archivo HTML.
+		cierre = leerArchivo( CIERRE_HTML );
+		w.append( cierre + "\n" );
+		w.close( );
+	}
+
+	public FileWriter pintarUnCirculo( FileWriter w, double radio, String color, String latitud, String longitud )
+			throws IOException
+	{
+		// Plantilla para construir un círculo.
+		String circuloBruto = CIRCULO_BRUTO.replace( "VALOR_RADIO", String.valueOf( radio ) );
+
+		ArrayList<String[]> remplazos = new ArrayList<String[]>( );
+		remplazos.add( new String[] { "LATITUD", latitud } );
+		remplazos.add( new String[] { "LONGITUD", longitud } );
+		remplazos.add( new String[] { "VALOR_RADIO", String.valueOf( radio ) } );
+		remplazos.add( new String[] { "COLOR", color } );
+
+		// Se remplazan los valores de la plantilla por los proporcionados.
+		String circulo = construirComponente( circuloBruto, remplazos );
+
+		w.append( circulo + "\n" );
+		return w;
+	}
+
+	public FileWriter pintarUnaLinea( FileWriter w, String color, String latitud1, String longitud1, String latitud2,
+			String longitud2 ) throws IOException
+	{
+		ArrayList<String[]> remplazos = new ArrayList<String[]>( );
+		remplazos.add( new String[] { "LATITUD_INICIO", latitud1 } );
+		remplazos.add( new String[] { "LONGITUD_INICIO", longitud1 } );
+		remplazos.add( new String[] { "LATITUD_FINAL", latitud2 } );
+		remplazos.add( new String[] { "LONGITUD_FINAL", longitud2 } );
+		remplazos.add( new String[] { "COLOR", color } );
+
+		String linea = construirComponente( LINEA_BRUTA, remplazos );
+
+		w.append( linea + "\n" );
+		return w;
+	}
+
+	/**
+	 * Muestra el grafo creado en grafo.html en el navegador.
+	 * @throws IOException Si hubo un problema en la lectura del archivo.
+	 */
+	public void abrirGrafoEnNavegador( ) throws IOException
+	{
+		java.awt.Desktop.getDesktop( ).browse( ( new File( "data/grafo.html" ) ).toURI( ) );
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------
 	// ALGORITMOS NECESARIOS
 	// ---------------------------------------------------------------------------------------------------------------------------
 
@@ -460,10 +704,10 @@ public class Modelo
 	{
 		for( double[] c : ultimas )
 		{
-			if( Haversine.distance( latitud, longitud, c[1], c[0]) <= error )
+			if( Haversine.distance( latitud, longitud, c[1], c[0] ) <= error )
 				return ( int ) c[2];
 		}
-		
+
 		int idVerticeMasCercano = -1, idActual;
 
 		double distanciaMenor = 10000.0, longitudA, latitudA, distanciaActual;
@@ -539,19 +783,21 @@ public class Modelo
 	{
 		if( grafoFD != null && grafoFD.numberOfStoredItems( ) != 0 )
 		{
-			int i = 0;
+			int i = -1;
 			Comparendo mayor = null;
-			while( i < grafoFD.numberOfVertices( ) )
+			while( ++i < grafoFD.numberOfVertices( ) )
 			{
 				Iterator<Comparendo> iter = grafoFD.vertexItems( i );
+
+				if( mayor == null )
+					mayor = iter.next( );
+
 				while( iter.hasNext( ) )
 				{
 					Comparendo c = iter.next( );
-
-					if( mayor == null || ( c.darId( ) > mayor.darId( ) ) )
+					if( c.darId( ) > mayor.darId( ) )
 						mayor = c;
 				}
-				i++;
 			}
 			return mayor;
 		}
@@ -646,110 +892,12 @@ public class Modelo
 	 *         w-v de forma que de cualquier forma se pueda acceder al costo de
 	 *         cierto arco.
 	 */
-	public String darReporteGrafo( @SuppressWarnings( "rawtypes" ) UndirectedGraph grafo )
+	public String darReporteGrafo( IGraph grafo )
 	{
 		String informacion = "\n";
 		informacion += "Cantidad de vertices creados: " + grafo.numberOfVertices( ) + "\n";
 		informacion += "Cantidad de arcos creados: " + grafo.numberOfEdges( ) + "\n\n";
 		return informacion;
-	}
-
-	/**
-	 * Pinta el grafo con la ayuda del API de Google Maps.
-	 * @throws FileNotFoundException Si no encuentra algún archivo referente a las
-	 *                               constantes creadas al inicio.
-	 * @throws IOException           Si hubo algún problema en la lectura de los
-	 *                               archivos.
-	 */
-	public void pintarGrafoEnGoogleMaps( ) throws FileNotFoundException, IOException
-	{
-		File f = new File( "./data/grafo.html" );
-		FileWriter w = new FileWriter( f, false );
-
-		// Principio del archivo HTML.
-		String apertura = leerArchivo( APERTURA_HTML );
-		w.append( apertura + "\n\n" );
-
-		// Principio del script.
-		apertura = leerArchivo( APERTURA_SCRIPT );
-		apertura = apertura.replace( "VALOR_ZOOM", VALOR_ZOOM );
-		apertura = apertura.replace( "LATITUD", POSICION_LATITUD );
-		apertura = apertura.replace( "LONGITUD", POSICION_LONGITUD );
-
-		w.append( apertura + "\n" );
-
-		// Formato usado para la creación de un círculo.
-		String circuloBruto = leerArchivo( CIRCULO );
-		circuloBruto = circuloBruto.replace( "VALOR_RADIO", VALOR_RADIO );
-
-		// Formato usado para la creación de una línea.
-		String lineaBruta = leerArchivo( LINEA );
-
-		String circulo, linea, latitud1, longitud1, latitud2, longitud2;
-		String[] remplazoLatitud, remplazoLongitud;
-		ArrayList<String[]> remplazos;
-
-		// Se itera sobre los vertices.
-		int i = 0;
-		while( i < grafoFD.numberOfVertices( ) )
-		{
-			String infoVertice = grafoFD.getVertexInfo( i );
-			latitud1 = infoVertice.split( "," )[1];
-			longitud1 = infoVertice.split( "," )[0];
-			remplazoLatitud = new String[] { "LATITUD", latitud1 };
-			remplazoLongitud = new String[] { "LONGITUD", longitud1 };
-			remplazos = new ArrayList<String[]>( );
-			remplazos.add( remplazoLatitud );
-			remplazos.add( remplazoLongitud );
-			circulo = construirComponente( circuloBruto, remplazos );
-
-			w.append( circulo + "\n" );
-			i++;
-		}
-
-		// Se itera sobre los arcos existentes.
-		Iterator<String> iter = grafoFD.edges( );
-		String arco;
-		int id1, id2;
-		while( iter.hasNext( ) )
-		{
-			arco = iter.next( );
-			id1 = Integer.valueOf( arco.split( "-" )[0] );
-			id2 = Integer.valueOf( arco.split( "-" )[1] );
-			latitud1 = String.valueOf( grafoFD.getVertexInfo( id1 ).split( "," )[1] );
-			longitud1 = String.valueOf( grafoFD.getVertexInfo( id1 ).split( "," )[0] );
-
-			latitud2 = String.valueOf( grafoFD.getVertexInfo( id2 ).split( "," )[1] );
-			longitud2 = String.valueOf( grafoFD.getVertexInfo( id2 ).split( "," )[0] );
-
-			remplazos = new ArrayList<String[]>( );
-			remplazoLatitud = new String[] { "LATITUD_INICIO", latitud1 };
-			remplazoLongitud = new String[] { "LONGITUD_INICIO", longitud1 };
-			remplazos.add( remplazoLatitud );
-			remplazos.add( remplazoLongitud );
-			remplazoLatitud = new String[] { "LATITUD_FINAL", latitud2 };
-			remplazoLongitud = new String[] { "LONGITUD_FINAL", longitud2 };
-			remplazos.add( remplazoLatitud );
-			remplazos.add( remplazoLongitud );
-
-			linea = construirComponente( lineaBruta, remplazos );
-
-			w.append( linea + "\n" );
-		}
-
-		// Cierre del script.
-		String cierre = leerArchivo( CIERRE_SCRIPT );
-
-		w.append( "\n\n" + cierre + "\n" );
-
-		// Final del archivo HTML.
-		cierre = leerArchivo( CIERRE_HTML );
-		w.append( cierre + "\n" );
-		w.close( );
-
-		// Se muestra el archivo HTML en el navegador.
-		f = new File( "data/grafo.html" );
-		java.awt.Desktop.getDesktop( ).browse( f.toURI( ) );
 	}
 
 	/**
@@ -773,18 +921,24 @@ public class Modelo
 
 		return cadena;
 	}
+
 	/**
-	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco como medida base. 
-	 * El punto de origen y destino son ingresados por el usuario como latitudes y longitudes (debe validarse que dichos puntos se encuentren dentro de los límites encontrados de la ciudad). 
-	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla vial.
+	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco
+	 * como medida base.
+	 * El punto de origen y destino son ingresados por el usuario como latitudes y
+	 * longitudes (debe validarse que dichos puntos se encuentren dentro de los
+	 * límites encontrados de la ciudad).
+	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla
+	 * vial.
 	 */
-	public void caminoDeCostoMinimoDistancia(double latitudOr, double longitudOr,double latitudDes, double longitudDes)
+	public void caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
+			double longitudDes )
 	{
-	  int verticeOrigen = darVerticeMasCercanoA(latitudOr,longitudOr,50);
-	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
-	
-	  
+		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 50 );
+		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 50 );
+
 	}
+
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
 	 * @param rutaArchivo Ruta del archivo a leer. rutaArchivo != null, != ""
@@ -796,5 +950,4 @@ public class Modelo
 		byte[] encoded = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		return new String( encoded, StandardCharsets.UTF_8 );
 	}
-
 }
