@@ -16,6 +16,9 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Lib"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/lib2"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/lib3"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/lib"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/libr"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/libra"/>
 	<classpathentry exported="true" kind="lib" path="C:/Users/Camilo Martínez/Documents/Talleres - Estructuras de datos/Proyecto3_202010_sec4_team3/lib/jackson-annotations-2.11.0.jar">
 		<attributes>
 			<attribute name="module" value="true"/>

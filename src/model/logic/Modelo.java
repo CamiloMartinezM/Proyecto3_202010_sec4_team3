@@ -785,6 +785,7 @@ public class Modelo
 	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
 	  Dijkstra shortestPath=  new Dijkstra(grafoFD,verticeOrigen,verticeDestino);
       shortestPath.print(verticeDestino);
+      
 	}
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
