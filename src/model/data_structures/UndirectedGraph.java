@@ -208,6 +208,12 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 		vertex.get( v ).setDistinctiveItem( item );
 		D++;
 	}
+	
+	public Vertex<K, V, L> getVertex(int v)
+	{
+		validateVertex(v);
+		return vertex.get(v);
+	}
 
 	/**
 	 * Le asigna al vértice la información (ambos dados por parámetro). El vértice

@@ -56,6 +56,12 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	public void setVertexInfo( int v, String info );
 
 	/**
+	 * metodo para obtener el vertice basado en el numero
+	 * @param v
+	 * @return vertice solicitado.
+	 */
+	public Vertex<K, V, L> getVertex(int v);
+	/**
 	 * @param v Vertice.
 	 * @return Información del vertice.
 	 */

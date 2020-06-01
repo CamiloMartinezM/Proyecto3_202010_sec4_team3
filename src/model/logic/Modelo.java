@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data_structures.HashTable;
+import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
 import model.data_structures.UndirectedGraph;
 
@@ -772,7 +773,18 @@ public class Modelo
 
 		return cadena;
 	}
-
+	/**
+	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco como medida base. 
+	 * El punto de origen y destino son ingresados por el usuario como latitudes y longitudes (debe validarse que dichos puntos se encuentren dentro de los límites encontrados de la ciudad). 
+	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla vial.
+	 */
+	public void caminoDeCostoMinimoDistancia(double latitudOr, double longitudOr,double latitudDes, double longitudDes)
+	{
+	  int verticeOrigen = darVerticeMasCercanoA(latitudOr,longitudOr,50);
+	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
+	
+	  
+	}
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
 	 * @param rutaArchivo Ruta del archivo a leer. rutaArchivo != null, != ""
@@ -784,4 +796,5 @@ public class Modelo
 		byte[] encoded = Files.readAllBytes( Paths.get( rutaArchivo ) );
 		return new String( encoded, StandardCharsets.UTF_8 );
 	}
+
 }
