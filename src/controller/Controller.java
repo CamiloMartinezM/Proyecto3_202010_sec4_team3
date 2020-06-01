@@ -185,6 +185,20 @@ public class Controller
 					}
 					break;
 
+				case 1:
+					view.printJump( );
+					view.printMessage( "Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
+					view.printMessage("Ingrese latitud del primer vertice:");
+					int latitudOr = Integer.parseInt(lector.next( ));
+					view.printMessage("Ingrese longitud del primer vertice:");
+					int longitudOr= Integer.parseInt(lector.next());
+					view.printMessage("Ingrese latitud del vertice de destino:");
+					int latitudDes = Integer.parseInt(lector.next( ));
+					view.printMessage("Ingrese longitud del primer vertice:");
+					int longitudDes= Integer.parseInt(lector.next());
+                    modelo.caminoDeCostoMinimoDistancia(latitudOr, longitudOr, latitudDes, longitudDes);				
+					break;
+					
 				case 6:
 					view.printJump( );
 					view.printMessage( "" );

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data_structures.Edge;
+import model.data_structures.Dijkstra;
 import model.data_structures.HashTable;
 import model.data_structures.IGraph;
 import model.data_structures.MST;
@@ -936,7 +937,8 @@ public class Modelo
 	{
 		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 50 );
 		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 50 );
-
+		Dijkstra shortestPath = new Dijkstra( grafoFD, verticeOrigen, verticeDestino );
+		shortestPath.print( verticeDestino );
 	}
 
 	/**
