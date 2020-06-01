@@ -1,4 +1,4 @@
-package model.logic;
+package model.data_structures;
 
 import java.util.Iterator;
 
@@ -7,9 +7,9 @@ import model.data_structures.IGraph;
 import model.data_structures.MinHeapPQ;
 import model.data_structures.Vertex;
 
-public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>, E extends Comparable<E>> {
-	private final int MAX = 10005;  //maximo numero de vértices
-    private final int INF = 99999999;  //definimos un valor grande que represente la distancia infinita inicial, basta conque sea superior al maximo valor del peso en alguna de las aristas
+public class Dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>, E extends Comparable<E>> {
+	private final int MAX = Integer.MAX_VALUE;  //maximo numero de vértices
+    private final int INF = Integer.MAX_VALUE;  //definimos un valor grande que represente la distancia infinita inicial, basta conque sea superior al maximo valor del peso en alguna de las aristas
     
      //lista de adyacencia
     private double distancia[ ] = new double[ MAX ];          //distancia[ u ] distancia de vértice inicial a vértice con ID = u
@@ -37,10 +37,10 @@ public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
         if( distancia[ actual ] + peso < distancia[ adyacente ] ){
             distancia[ adyacente ] =  (distancia[ actual ] + peso);  //relajamos el vertice actualizando la distancia
             previo[ adyacente ] = actual;                         //a su vez actualizamos el vertice previo
-            pq.insert( G.getVertex(adyacente)); //agregamos adyacente a la cola de prioridad
+            pq.insert( G.getVertex(adyacente));                  //agregamos adyacente a la cola de prioridad
         }  
     }
-   public void dijkstra( IGraph G ,int inicial, int destino){
+   public Dijkstra( IGraph G ,int inicial, int destino){
         init(); //inicializamos nuestros arreglos
         pq.insert( G.getVertex(inicial) ); //Insertamos el vértice inicial en la Cola de Prioridad
         distancia[ inicial ] = 0;      //Este paso es importante, inicializamos la distancia del inicial como 0
@@ -54,22 +54,13 @@ public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
             
             while( iterador.hasNext())
             {
-               adyacente = G.getVertex(iterador.next());
-               peso = G.getEdgeDoubleCost(actual.getId(), iterador.next());
+               int id = iterador.next();
+               adyacente = G.getVertex(id);
+               peso = G.getEdgeDoubleCost(actual.getId(), id);
             	if(!visitado[iterador.next()]){
             		relajacion(G,actual.getId(),adyacente.getId(),peso);
             	}
             	actual=adyacente;
-            }
-            
-            
-            
-            for( int i = 0 ; i < actual. ; ++i ){ //reviso sus adyacentes del vertice actual
-                adyacente = ady.get( actual ).get( i ).first;   //id del vertice adyacente
-                peso = ady.get( actual ).get( i ).second;        //peso de la arista que une actual con adyacente ( actual , adyacente )
-                if( !visitado[ adyacente ] ){        //si el vertice adyacente no fue visitado
-                    relajacion( actual , adyacente , peso ); //realizamos el paso de relajacion
-                }
             }
         }
 
@@ -80,10 +71,9 @@ public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
         dijkstraEjecutado = true;
     }
     
-
     //Impresion del camino mas corto desde el vertice inicial y final ingresados
-    void print( int destino ){
-        if( previo[ destino ] != -1 )    //si aun poseo un vertice previo
+    public void print( int destino ){
+         if( previo[ destino ] != -1 )    //si aun poseo un vertice previo
             print( previo[ destino ] );  //recursivamente sigo explorando
         System.out.printf("%d " , destino );        //terminada la recursion imprimo los vertices recorridos
     }

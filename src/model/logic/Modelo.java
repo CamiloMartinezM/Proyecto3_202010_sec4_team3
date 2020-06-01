@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import model.data_structures.Dijkstra;
 import model.data_structures.HashTable;
 import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
@@ -782,8 +783,8 @@ public class Modelo
 	{
 	  int verticeOrigen = darVerticeMasCercanoA(latitudOr,longitudOr,50);
 	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
-	
-	  
+	  Dijkstra shortestPath=  new Dijkstra(grafoFD,verticeOrigen,verticeDestino);
+      shortestPath.print(verticeDestino);
 	}
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
