@@ -12,7 +12,7 @@ public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
     private final int INF = 99999999;  //definimos un valor grande que represente la distancia infinita inicial, basta conque sea superior al maximo valor del peso en alguna de las aristas
     
      //lista de adyacencia
-    private int distancia[ ] = new double[ MAX ];          //distancia[ u ] distancia de vértice inicial a vértice con ID = u
+    private double distancia[ ] = new double[ MAX ];          //distancia[ u ] distancia de vértice inicial a vértice con ID = u
     private boolean visitado[ ] = new boolean[ MAX ];   //para vértices visitados
 	private MinHeapPQ<Vertex<K, V, E>> pq;                       //priority queue.
     private int V;                                      //numero de vertices
@@ -35,7 +35,7 @@ public class dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
     	
         //Si la distancia del origen al vertice actual + peso de su arista es menor a la distancia del origen al vertice adyacente
         if( distancia[ actual ] + peso < distancia[ adyacente ] ){
-            distancia[ adyacente ] =  (int) (distancia[ actual ] + peso);  //relajamos el vertice actualizando la distancia
+            distancia[ adyacente ] =  (distancia[ actual ] + peso);  //relajamos el vertice actualizando la distancia
             previo[ adyacente ] = actual;                         //a su vez actualizamos el vertice previo
             pq.insert( G.getVertex(adyacente)); //agregamos adyacente a la cola de prioridad
         }  
