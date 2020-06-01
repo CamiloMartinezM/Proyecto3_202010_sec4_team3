@@ -1,5 +1,6 @@
 package controller;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -15,7 +16,6 @@ public class Controller
 	/**
 	 * Constantes que tienen los nombres de los archivos necesarios.
 	 */
-	private final static String ARCHIVO_COMPARENDOS = "./data/Comparendos_DEI_2018_Bogotá_D.C.geojson";
 	private final static String ARCHIVO_ESTACIONES = "./data/estacionpolicia.geojson";
 	private final static String ARCHIVO_VERTICES = "./data/bogota_vertices.txt";
 	private final static String ARCHIVO_ARCOS = "./data/bogota_arcos.txt";
@@ -37,19 +37,79 @@ public class Controller
 	public Controller( )
 	{
 		view = new View( );
-		modelo = new Modelo( );
+		try
+		{
+			modelo = new Modelo( );
+		}
+		catch( IOException e )
+		{
+			view.printMessage( "* Hubo un problema construyendo el modelo *" );
+			view.printMessage( "Excepción original:\n" );
+			e.printStackTrace();
+		}
 	}
 
 	public void run( )
 	{
 		Scanner lector = new Scanner( System.in );
-		boolean fin = false;
+		boolean fin = false, ocurrioExcepcion;
+		int option;
+		String rutaArchivo = null;
+		while( !fin )
+		{
+			view.printJump( );
+			view.printMenuArchivo( );
+
+			ocurrioExcepcion = true;
+			while( ocurrioExcepcion )
+			{
+				try
+				{
+					option = Integer.parseInt( lector.next( ) );
+					if( !opcionExiste( option, new int[] { 1, 2, 3 } ) )
+						throw new Exception( "Ingrese una opción válida." );
+					else
+					{
+						switch( option )
+						{
+							case 1:
+								rutaArchivo = "./data/Comparendos_DEI_2018_Bogotá_D.C.geojson";
+								break;
+							case 2:
+								rutaArchivo = "./data/Comparendos_DEI_2018_Bogotá_D.C_50000_.geojson";
+								break;
+							case 3:
+								rutaArchivo = "./data/Comparendos_DEI_2018_Bogotá_D.C_small_50000_sorted.geojson";
+								break;
+						}
+						if( !archivoExiste( rutaArchivo ) )
+						{
+							view.printMessage(
+									"El archivo parece que no está en el directorio. Escoja otro o intente de nuevo:" );
+							continue;
+						}
+					}
+					view.printMessage( "\nArchivo escogido: " + rutaArchivo );
+					view.printMessage( "\n** NO OLVIDE SELECCIONAR LA OPCIÓN 0 PRIMERO A CONTINUACIÓN **" );
+					ocurrioExcepcion = false;
+				}
+				catch( Exception e )
+				{
+					view.printMessage( "Ingrese una opción válida." );
+					ocurrioExcepcion = true;
+				}
+			}
+			fin = true;
+		}
+		
+		fin = false;
+		
 		while( !fin )
 		{
 			view.printJump( );
 			view.printMenu( );
 
-			int option = lector.nextInt( );
+			option = lector.nextInt( );
 			switch( option )
 			{
 				case 0:
@@ -70,7 +130,7 @@ public class Controller
 					{
 						view.printMessage( "\nCargando comparendos...\n" );
 						view.printMessage( "+ Esto dura alrededor de 2 minutos, no se preocupe +\n" );
-						modelo.cargarComparendosEnGrafo( ARCHIVO_COMPARENDOS );
+						modelo.cargarComparendosEnGrafo( rutaArchivo );
 						view.printMessage( "¡Los comparendos fueron cargados exitosamente!" );
 					}
 					catch( IllegalStateException e3 )
@@ -141,6 +201,26 @@ public class Controller
 					
 				case 6:
 					view.printJump( );
+					view.printMessage( "" );
+					
+					try
+					{
+						view.printMessage( modelo.identificarZonasDeImpacto( ) );
+					}
+					catch( NullPointerException e )
+					{
+						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *\n" );
+						e.printStackTrace( );
+					}
+					catch( IOException e )
+					{
+						view.printMessage( "* Asegúrese de tener los archivos necesarios .txt para el HTML. *\n" );
+					}
+					
+					break;
+					
+				case 7:
+					view.printJump( );
 					view.printMessage( "\n¡Hasta pronto!\n" );
 					view.printJump( );
 					lector.close( );
@@ -153,5 +233,20 @@ public class Controller
 					break;
 			}
 		}
+	}
+	
+	private boolean opcionExiste( int opcion, int[] posiblesOpciones )
+	{
+		for( int i = 0; i < posiblesOpciones.length; i++ )
+			if( opcion == posiblesOpciones[i] )
+				return true;
+
+		return false;
+	}
+
+	private boolean archivoExiste( String rutaArchivo )
+	{
+		File tmp = new File( rutaArchivo );
+		return tmp.exists( );
 	}
 }

@@ -1,8 +1,8 @@
 var circle = new google.maps.Circle({
-strokeColor: '#FF0000',
+strokeColor: 'COLOR',
 strokeOpacity: 0.6,
 strokeWeight: 1,
-fillColor: '#FFA500',
+fillColor: 'COLOR',
 fillOpacity: 0.35,
 map: map,
 center: {lat: LATITUD, lng: LONGITUD},

@@ -1,6 +1,6 @@
 var linea = new google.maps.Polyline({
 path: [{lat:LATITUD_INICIO, lng:LONGITUD_INICIO}, {lat:LATITUD_FINAL, lng: LONGITUD_FINAL}],
-strokeColor: '#FFA500',
+strokeColor: 'COLOR',
 strokeOpacity: 1.0,
 strokeWeight: 2,
 map: map

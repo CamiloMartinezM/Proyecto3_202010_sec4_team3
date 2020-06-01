@@ -20,7 +20,7 @@ public class Stopwatch
 	}
 
 	/**
-	 * @return Tiempo en segundos transcurrido luego de haber inicializo el
+	 * @return Tiempo en milisegundos transcurrido luego de haber inicializo el
 	 *         Stopwatch hasta haber llamado este método.
 	 */
 	public double elapsedTime( )
