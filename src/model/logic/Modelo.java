@@ -172,6 +172,7 @@ public class Modelo
 			{
 				c = comparendos.peekPosition( i );
 				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 0.5 );
+				c.setIdVertex(verticeMasCercano);
 				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
 		}
@@ -551,10 +552,66 @@ public class Modelo
 	 * Parte A, punto 2
 	 * Determinar la red de comunicaciones que soporte la instalación de cámaras de video 
 	 * en los M puntos donde se presenta el mayor número de comparendos en la ciudad.
+	 * @throws IOException 
 	 */
-	public void redDeComunicacionesCamaraDeVideo(int M)
+	public String redDeComunicacionesCamaraDeVideo(int M) throws IOException
 	{
-		
+		String reporte = "";
+		Stopwatch timer = new Stopwatch( );
+		crearMaxHeapDeMayorNumeroComparendos( );
+		UndirectedGraph<?, ?, ?> g = crearGrafoCompletamenteConexo( comparendos, M );
+		int i =0;
+		MST<?, ?, ?> arbol = new MST<>( g );
+		reporte += "Tiempo que toma el algoritmo en encontrar la solución: " + timer.elapsedTime( ) + " ms\n";
+		reporte += "Total de vértices en el componente: " + M + "\n\n";
+		reporte += "Lista de vértices involucrados:\n\n";
+		while( i < comparendos.getSize( )&& i<M )
+		{
+			Comparendo actual = comparendos.peekPosition( i );
+			reporte += "\tVértice de ID " + actual.darIdVertex() + " con "
+					+ grafoFD.getVertex(actual.darIdVertex()).numberOfItems() + "\n";
+		}
+		reporte += "\nLista de arcos en el MST:\n\n";
+		for( Edge<?, ?, ?> e : arbol )
+			reporte += "\t" + e.either( ) + " - " + e.other( e.either( ) ) + "\n";
+
+		DecimalFormat df = new DecimalFormat( "###,###,###.###" );
+		reporte += "\nCosto total: $" + df.format( 10000 * arbol.cost( ) ) + " COP\n";
+		arbol = new MST<>( g );
+		pintarRedDeComunicacionesMayorNumeroComparendosGoogleMaps( arbol, g );
+		return reporte;
+	}
+	/**
+	 * Crea un grafo completamente conexo usando el heap de vértices dado.
+	 * @param heap Cola de prioridad. heap != null
+	 * @param M    Número de vértices a incluir.
+	 * @return Grafo.
+	 */
+	public UndirectedGraph<?, ?, ?> crearGrafoCompletamenteConexo( MaxHeapPQ< Comparendo> heap, int M )
+	{
+		UndirectedGraph<?, ?, ?> g = new UndirectedGraph<>( M );
+        int k = 0;
+		while( k < comparendos.getSize( )&& k<M )
+		{
+			Comparendo actual = comparendos.peekPosition( k);
+			g.setVertexInfo( k, grafoFD.getVertex(actual.darIdVertex()).getInfo() );
+            k++;		
+		}
+		for( int i = 0; i < M; i++ )
+		{
+			double latitud1 = Double.parseDouble( g.getVertexInfo( i ).split( "," )[1] );
+			double longitud1 = Double.parseDouble( g.getVertexInfo( i ).split( "," )[0] );
+
+			for( int j = i + 1; j < M; j++ )
+			{
+				double latitud2 = Double.parseDouble( g.getVertexInfo( j ).split( "," )[1] );
+				double longitud2 = Double.parseDouble( g.getVertexInfo( j ).split( "," )[0] );
+				double distancia = Haversine.distance( latitud1, longitud1, latitud2, longitud2 );
+				g.addEdge( i, j, distancia );
+			}
+		}
+
+		return g;
 	}
 	// ---------------------------------------------------------------------------------------------------------------------------
 	// PARTE B
@@ -669,27 +726,79 @@ public class Modelo
 	/**
 	 * PARTE C. Punto 1.
 	 * @return Grafo de las zonas de impacto.
+	 * @throws IOException 
 	 */
-	 public UndirectedGraph<?,?,Integer> CaminosMasCortosParaComparendosMasGraves(int M)
+	 public String CaminosMasCortosParaComparendosMasGraves(int M) throws IOException
 	 {
-	 UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
-	 Queue<Comparendo> comp = new Queue<>() ;
-	 for (int i = 0; i < M; i++) {
-		Comparendo actual = comparendos.poll();
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		comp.enQueue(actual);
-	 }
-	 return g;
+	  UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>(NUMERO_ESTACIONES_POLICIA + grafoFD.numberOfVertices( ) );		 
+	  Comparendo actual;
+	  String reporte ="";
+	  int i =0;
+		while( i < comparendos.getSize( )&& i<M )
+		{
+			actual = comparendos.peekPosition( i );
+		    int idVertex = actual.darIdVertex();	
+			
+		    int idEstacionMasCercana = -1;
+			double distanciaMenor = 10000.0;
+			double latitud = Double.parseDouble( grafoFD.getVertexInfo( idVertex ).split( "," )[1] );
+			double longitud = Double.parseDouble( grafoFD.getVertexInfo( idVertex ).split( "," )[0] );
+
+			// Se busca la estación cuya distancia sea la menor.
+			for( int j = 0; j < NUMERO_ESTACIONES_POLICIA; j++ )
+			{
+				double distanciaActual = Haversine.distance(
+						Double.parseDouble( g.getVertexInfo( j ).split( "," )[1] ),
+						Double.parseDouble( g.getVertexInfo( j ).split( "," )[0] ), latitud, longitud );
+
+				if( distanciaActual < distanciaMenor )
+				{
+					distanciaMenor = distanciaActual;
+					idEstacionMasCercana = j;
+				}
+			}
+			Stopwatch timer = new Stopwatch( );
+			Dijkstra dij = new Dijkstra(grafoFD,idEstacionMasCercana,idVertex);	    
+		    UndirectedGraph<?, ?, Integer> grafo = dij.crearGrafo(grafoFD, idVertex);
+			reporte += "Tiempo que toma el algoritmo en crear el grafo: " + timer.elapsedTime( ) + " ms\n";
+            pintarCaminosCortosGoogleMaps(grafo);            
+			for( int j = 0; j < g.numberOfVertices(); j++ )
+			{
+				reporte += "Vertices:" + g.getVertex(j).getId() ;
+			}
+		}
+		return reporte;
 	 }
 	
+	 public void pintarCaminosCortosGoogleMaps( UndirectedGraph<?, ?, Integer> g ) throws IOException
+		{
+			FileWriter w = inicializarHTML( );
+
+			// Se itera sobre los vertices.
+			int i = -1;
+			while( ++i < g.numberOfVertices())
+			{
+				String infoVertice = g.getVertexInfo( i );
+				String latitud1 = infoVertice.split( "," )[1];
+				String longitud1 = infoVertice.split( "," )[0];
+
+				w = pintarUnCirculo( w, VALOR_RADIO , colores[i], latitud1, longitud1 );
+
+				// Se itera sobre las adyacencias.
+				for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
+				{
+					String latitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[1];
+					String longitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[0];
+					w = pintarUnaLinea( w, colores[i], latitud1, longitud1, latitud2, longitud2 );
+					w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[i], latitud2, longitud2 );
+				}
+
+				i++;
+			}
+
+			finalizarHTML( w );
+			abrirGrafoEnNavegador( );
+		}
 	/**
 	 * PARTE C. Punto 2.
 	 * @return Grafo de las zonas de impacto.

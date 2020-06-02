@@ -217,7 +217,13 @@ public class Comparendo implements Comparable<Comparendo>
 	{
 		return codigoInfraccion;
 	}
-
+  
+	public void setIdVertex(int id ) {
+		idVertex=id ;
+	}
+	public int darIdVertex() {
+		return idVertex;
+	}
 	/**
 	 * Cambia el código de la infracción actual por uno nuevo dado por parámetro.
 	 * @param codigoInfraccion Nuevo código de la infracción.
