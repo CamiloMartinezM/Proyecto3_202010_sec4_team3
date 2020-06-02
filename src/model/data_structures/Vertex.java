@@ -147,7 +147,11 @@ public class Vertex<K extends Comparable<K>, V extends Comparable<V>, E extends 
 	@Override
 	public int compareTo( Vertex<K, V, E> o )
 	{
-		// TODO Auto-generated method stub
-		return 0;
+		if( this.numberOfItems( ) < o.numberOfItems( ) )
+			return -1;
+		else if( this.numberOfItems( ) > o.numberOfItems( ) )
+			return 1;
+		else
+			return 0;
 	}
 }

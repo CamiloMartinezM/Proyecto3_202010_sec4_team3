@@ -14,6 +14,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Scanner;
@@ -30,6 +31,7 @@ import model.data_structures.IGraph;
 import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
 import model.data_structures.UndirectedGraph;
+import model.data_structures.Vertex;
 
 /**
  * Definición del modelo del mundo.
@@ -84,9 +86,15 @@ public class Modelo
 	private MaxHeapPQ<EstacionPolicia> estaciones;
 
 	/**
-	 * Heap de prioridad que guarda la información de los comparendos.
+	 * Cola de prioridad que guarda la información de los comparendos.
 	 */
 	private MaxHeapPQ<Comparendo> comparendos;
+
+	/**
+	 * Cola de prioridad que guarda los vértices en orden de cuál tiene mayor
+	 * cantidad de comparendos guardados.
+	 */
+	private MaxHeapPQ<Vertex<?, Comparendo, ?>> mayorNumeroComparendosCiudad;
 
 	/**
 	 * Grafo cargado a partir de las fuentes de datos.
@@ -122,6 +130,7 @@ public class Modelo
 		comparendos = null;
 		grafoFD = null;
 		grafoJS = null;
+		mayorNumeroComparendosCiudad = null;
 
 		// Lectura de formatos/plantillas para pintar en Google Maps.
 		CIRCULO_BRUTO = leerArchivo( CIRCULO );
@@ -480,6 +489,113 @@ public class Modelo
 	}
 
 	// ---------------------------------------------------------------------------------------------------------------------------
+	// PARTE B
+	// ---------------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Crea una cola de prioridad de vértices ordenándolos de mayor a menor según el
+	 * número de comparendos dentro.
+	 */
+	public void crearMaxHeapDeMayorNumeroComparendos( )
+	{
+		mayorNumeroComparendosCiudad = new MaxHeapPQ<Vertex<?, Comparendo, ?>>( grafoFD.numberOfVertices( ) );
+
+		int i = -1;
+		while( ++i < grafoFD.numberOfVertices( ) )
+			mayorNumeroComparendosCiudad.insert( grafoFD.getVertex( i ) );
+	}
+
+	/**
+	 * Crea un grafo completamente conexo usando el heap de vértices dado.
+	 * @param heap Cola de prioridad. heap != null
+	 * @param M    Número de vértices a incluir.
+	 * @return Grafo.
+	 */
+	public UndirectedGraph<?, ?, ?> crearGrafoCompletamenteConexoDe( MaxHeapPQ<Vertex<?, Comparendo, ?>> heap, int M )
+	{
+		UndirectedGraph<?, ?, ?> g = new UndirectedGraph<>( M );
+
+		for( int i = 0; i < M; i++ )
+			g.setVertexInfo( i, mayorNumeroComparendosCiudad.poll( ).getInfo( ) );
+
+		for( int i = 0; i < M; i++ )
+		{
+			double latitud1 = Double.parseDouble( g.getVertexInfo( i ).split( "," )[1] );
+			double longitud1 = Double.parseDouble( g.getVertexInfo( i ).split( "," )[0] );
+
+			for( int j = i + 1; j < M; j++ )
+			{
+				double latitud2 = Double.parseDouble( g.getVertexInfo( j ).split( "," )[1] );
+				double longitud2 = Double.parseDouble( g.getVertexInfo( j ).split( "," )[0] );
+				double distancia = Haversine.distance( latitud1, longitud1, latitud2, longitud2 );
+				g.addEdge( i, j, distancia );
+			}
+		}
+
+		return g;
+	}
+
+	/**
+	 * PARTE B. Punto 2.
+	 * @param M Número de vértices a incluir. M > 1
+	 * @return Reporte con la información importante.
+	 * @throws IOException Si hay un problema de lectura de algún archivo.
+	 */
+	public String crearRedDeComunicaciones( int M ) throws IOException
+	{
+		String reporte = "";
+		Stopwatch timer = new Stopwatch( );
+		crearMaxHeapDeMayorNumeroComparendos( );
+		UndirectedGraph<?, ?, ?> g = crearGrafoCompletamenteConexoDe( mayorNumeroComparendosCiudad, M );
+		MST<?, ?, ?> arbol = new MST<>( g );
+		reporte += "Tiempo que toma el algoritmo en encontrar la solución: " + timer.elapsedTime( ) + " ms\n";
+		reporte += "Total de vértices en el componente: " + M + "\n\n";
+		reporte += "Lista de vértices involucrados:\n\n";
+		crearMaxHeapDeMayorNumeroComparendos( );
+		for( int i = 0; i < M; i++ )
+			reporte += "\tVértice de ID " + mayorNumeroComparendosCiudad.poll( ).getId( ) + " con "
+					+ mayorNumeroComparendosCiudad.poll( ).numberOfItems( ) + "\n";
+
+		reporte += "\nLista de arcos en el MST:\n\n";
+		for( Edge<?, ?, ?> e : arbol )
+			reporte += "\t" + e.either( ) + " - " + e.other( e.either( ) ) + "\n";
+
+		DecimalFormat df = new DecimalFormat( "###,###,###.###" );
+		reporte += "\nCosto total: $" + df.format( 10000 * arbol.cost( ) ) + " COP\n";
+		arbol = new MST<>( g );
+		pintarRedDeComunicacionesMayorNumeroComparendosGoogleMaps( arbol, g );
+		return reporte;
+	}
+
+	/**
+	 * PARTE B. Punto 2.
+	 * @param g Grafo a pintar.
+	 */
+	public void pintarRedDeComunicacionesMayorNumeroComparendosGoogleMaps( MST<?, ?, ?> arbol,
+			UndirectedGraph<?, ?, ?> g ) throws IOException
+	{
+		FileWriter w = inicializarHTML( );
+
+		// Se itera sobre los vertices.
+		for( Edge<?, ?, ?> e : arbol )
+		{
+			String latitud1 = g.getVertexInfo( e.either( ) ).split( "," )[1];
+			String longitud1 = g.getVertexInfo( e.either( ) ).split( "," )[0];
+			w = pintarUnCirculo( w, VALOR_RADIO, colores[0], latitud1, longitud1 );
+
+			String latitud2 = g.getVertexInfo( e.other( e.either( ) ) ).split( "," )[1];
+			String longitud2 = g.getVertexInfo( e.other( e.either( ) ) ).split( "," )[0];
+
+			w = pintarUnCirculo( w, VALOR_RADIO, colores[0], latitud2, longitud2 );
+
+			w = pintarUnaLinea( w, colores[0], latitud1, longitud1, latitud2, longitud2 );
+		}
+
+		finalizarHTML( w );
+		abrirGrafoEnNavegador( );
+	}
+
+	// ---------------------------------------------------------------------------------------------------------------------------
 	// PARTE C
 	// ---------------------------------------------------------------------------------------------------------------------------
 
@@ -494,7 +610,8 @@ public class Modelo
 		// distintivo de un vértice de un grafo es un entero que posee la cantidad de
 		// comparendos guardados en ellos. En el caso de la estación de policía, tendrá
 		// el número de comparendos que son atendidos por esta.
-		UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
+		UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>(
+				NUMERO_ESTACIONES_POLICIA + grafoFD.numberOfVertices( ) );
 
 		// Se inserta la información de las estaciones en los vértices 0 a
 		// NUMERO_ESTACIONES_POLICIA - 1.
@@ -506,21 +623,26 @@ public class Modelo
 		}
 
 		int i = -1;
+		int c = NUMERO_ESTACIONES_POLICIA; // Corrección para no sobreescribir ningún vértice de g.
 		while( ++i < grafoFD.numberOfVertices( ) )
 		{
 			// Mientras que haya comparendos dentro de un vértice.
 			if( grafoFD.numberOfItemsOf( i ) != 0 )
 			{
+				// Se agrega la información del vértice.
+				g.setVertexInfo( i + c, grafoFD.getVertexInfo( i ) );
+
 				int idEstacionMasCercana = -1;
 				double distanciaMenor = 10000.0;
+				double latitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[1] );
+				double longitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[0] );
 
 				// Se busca la estación cuya distancia sea la menor.
 				for( int j = 0; j < NUMERO_ESTACIONES_POLICIA; j++ )
 				{
-					double latitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[1] );
-					double longitud = Double.parseDouble( grafoFD.getVertexInfo( i ).split( "," )[0] );
-					double distanciaActual = Haversine.distance( estaciones.peekPosition( j ).darLatitud( ),
-							estaciones.peekPosition( j ).darLongitud( ), latitud, longitud );
+					double distanciaActual = Haversine.distance(
+							Double.parseDouble( g.getVertexInfo( j ).split( "," )[1] ),
+							Double.parseDouble( g.getVertexInfo( j ).split( "," )[0] ), latitud, longitud );
 
 					if( distanciaActual < distanciaMenor )
 					{
@@ -529,13 +651,10 @@ public class Modelo
 					}
 				}
 
-				// Se agrega la información del vértice.
-				g.setVertexInfo( i, grafoFD.getVertexInfo( i ) );
-
 				// Se agrega a la estación el comparendo actual y el costo entero del arco que
 				// los une es el número de comparendos dentro del vértice.
-				g.addEdge( idEstacionMasCercana, i, distanciaMenor );
-				g.setEdgeIntegerCost( idEstacionMasCercana, i, grafoFD.numberOfItemsOf( i ) );
+				g.addEdge( idEstacionMasCercana, i + c, distanciaMenor );
+				g.setEdgeIntegerCost( idEstacionMasCercana, i + c, grafoFD.numberOfItemsOf( i ) );
 
 				// Se aumenta el número de comparendos atendidos en la estación.
 				g.setVertexDistinctiveItem( idEstacionMasCercana,
@@ -588,7 +707,7 @@ public class Modelo
 			String longitud1 = infoVertice.split( "," )[0];
 
 			// Se cuentan los comparendos contenidos en esta estación.
-			double incrementador = 3 * ( 1 + g.getVertexDistinctiveItem( i ) / grafoFD.numberOfStoredItems( ) );
+			double incrementador = 3 * ( 1 + 100 * g.getVertexDistinctiveItem( i ) / grafoFD.numberOfStoredItems( ) );
 
 			w = pintarUnCirculo( w, VALOR_RADIO * incrementador, colores[i], latitud1, longitud1 );
 

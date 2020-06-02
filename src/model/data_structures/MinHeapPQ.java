@@ -114,11 +114,10 @@ public class MinHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 	 */
 	public void insert( T elem )
 	{
-		if( heapSize < heapCapacity )
-			heap[++heapSize] = elem;
-		else
-			throw new IllegalStateException( "La capacidad del heap ha sido superada." );
+		if( heapSize == heap.length - 1 )
+			resize( 2 * heapCapacity );
 
+		heap[++heapSize] = elem;
 		swim( heapSize );
 	}
 
@@ -249,5 +248,18 @@ public class MinHeapPQ<T extends Comparable<T>> implements IPriorityHeap<T>
 			exch( k, j );
 			k = j;
 		}
+	}
+
+	private void resize( int capacity )
+	{
+		T[] temp = ( T[] ) new Comparable[capacity + 1];
+		for( int i = 1; i <= heapSize; i++ )
+		{
+			temp[i] = heap[i];
+		}
+
+		heapCapacity = capacity;
+		heap = ( T[] ) new Comparable[capacity + 1];
+		heap = temp;
 	}
 }

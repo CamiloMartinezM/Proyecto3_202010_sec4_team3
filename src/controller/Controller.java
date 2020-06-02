@@ -198,6 +198,44 @@ public class Controller
 					int longitudDes= Integer.parseInt(lector.next());
                     modelo.caminoDeCostoMinimoDistancia(latitudOr, longitudOr, latitudDes, longitudDes);				
 					break;
+				
+				case 4:
+					view.printJump( );
+					view.printMessage( "Ingrese M = " );
+					int M = 0;
+					ocurrioExcepcion = true;
+					while( ocurrioExcepcion )
+					{
+						try
+						{
+							M = Integer.parseInt( lector.next( ) );
+							if( M <= 1 )
+								throw new Exception( "Ingrese un entero positivo válido, M = " );
+							ocurrioExcepcion = false;
+						}
+						catch( NullPointerException | NumberFormatException e )
+						{
+							view.printMessage( "Digite un entero positivo válido, M = " );
+							ocurrioExcepcion = true;
+						}
+						catch( Exception e )
+						{
+							view.printMessage( e.getMessage( ) );
+							ocurrioExcepcion = true;
+						}
+					}
+
+					view.printJump( );
+					view.printMessage( "" );
+					try
+					{
+						view.printMessage( modelo.crearRedDeComunicaciones( M ) );
+					}
+					catch( IOException e1 )
+					{
+						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
+					break;
 					
 				case 6:
 					view.printJump( );

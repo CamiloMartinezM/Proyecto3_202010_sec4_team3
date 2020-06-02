@@ -1,12 +1,14 @@
 package model.data_structures;
 
+import java.util.Iterator;
+
 /**
  * Implementación de los algoritmos que permiten hallar el árbol de expansión
  * mínima de un grafo.
  * @author Camilo Martínez & Nicolás Quintero
  */
 @SuppressWarnings( "rawtypes" )
-public class MST<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>>
+public class MST<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>> implements Iterable<Edge>
 {
 	private boolean[] marked;
 
@@ -23,7 +25,7 @@ public class MST<K extends Comparable<K>, V extends Comparable<V>, L extends Com
 	public MST( IGraph G )
 	{
 		cost = 0;
-		pq = new MinHeapPQ<Edge<K, V, L>>( G.numberOfVertices( ) - 1 );
+		pq = new MinHeapPQ<Edge<K, V, L>>( G.numberOfVertices( ) );
 		marked = new boolean[G.numberOfVertices( )];
 		mst = new Queue<Edge>( );
 		visit( G, 0 );
@@ -61,5 +63,11 @@ public class MST<K extends Comparable<K>, V extends Comparable<V>, L extends Com
 	public double cost( )
 	{
 		return cost;
+	}
+
+	@Override
+	public Iterator<Edge> iterator( )
+	{
+		return edges( ).iterator( );
 	}
 }
