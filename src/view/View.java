@@ -67,6 +67,6 @@ public class View
 	 */
 	public void printJump( )
 	{
-		printMessage( new String( new char[120] ).replace( "\0", "-" ) );
+		printMessage( new String( new char[140] ).replace( "\0", "-" ) );
 	}
 }
