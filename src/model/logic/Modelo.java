@@ -29,6 +29,7 @@ import model.data_structures.HashTable;
 import model.data_structures.IGraph;
 import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
+import model.data_structures.Queue;
 import model.data_structures.UndirectedGraph;
 
 /**
@@ -556,8 +557,20 @@ public class Modelo
 	 public UndirectedGraph<?,?,Integer> CaminosMasCortosParaComparendosMasGraves(int M)
 	 {
 	 UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
-	 
-	 
+	 Queue<Comparendo> comp = new Queue<>() ;
+	 for (int i = 0; i < M; i++) {
+		Comparendo actual = comparendos.poll();
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		comp.enQueue(actual);
+	 }
 	 return g;
 	 }
 	
@@ -1001,7 +1014,6 @@ public class Modelo
 		return cadena;
 	}
 
-	
 
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
