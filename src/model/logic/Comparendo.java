@@ -36,7 +36,7 @@ public class Comparendo implements Comparable<Comparendo>
 		 * Fecha-hora de los comparendos.
 		 */
 		FECHA_HORA,
-		
+
 		/**
 		 * ID de los comparendos.
 		 */
@@ -93,6 +93,8 @@ public class Comparendo implements Comparable<Comparendo>
 	 */
 	private Comparador comparador;
 
+	private int idVertex;
+	
 	/**
 	 * Inicializa un comparendo con la información dada por parámetro.
 	 * @param id                    Identificador único del comparendo.
@@ -215,6 +217,16 @@ public class Comparendo implements Comparable<Comparendo>
 	public String darCodigoInfraccion( )
 	{
 		return codigoInfraccion;
+	}
+
+	public void setIdVertex( int id )
+	{
+		idVertex = id;
+	}
+
+	public int darIdVertex( )
+	{
+		return idVertex;
 	}
 
 	/**
