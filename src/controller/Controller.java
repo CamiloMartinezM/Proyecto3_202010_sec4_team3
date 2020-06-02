@@ -45,7 +45,7 @@ public class Controller
 		{
 			view.printMessage( "* Hubo un problema construyendo el modelo *" );
 			view.printMessage( "Excepción original:\n" );
-			e.printStackTrace();
+			e.printStackTrace( );
 		}
 	}
 
@@ -101,9 +101,9 @@ public class Controller
 			}
 			fin = true;
 		}
-		
+
 		fin = false;
-		
+
 		while( !fin )
 		{
 			view.printJump( );
@@ -167,7 +167,8 @@ public class Controller
 					}
 					catch( NullPointerException e2 )
 					{
-						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
 					}
 					catch( IllegalStateException e3 )
 					{
@@ -187,18 +188,52 @@ public class Controller
 
 				case 1:
 					view.printJump( );
-					view.printMessage( "Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
-					view.printMessage("Ingrese latitud del primer vertice:");
-					int latitudOr = Integer.parseInt(lector.next( ));
-					view.printMessage("Ingrese longitud del primer vertice:");
-					int longitudOr= Integer.parseInt(lector.next());
-					view.printMessage("Ingrese latitud del vertice de destino:");
-					int latitudDes = Integer.parseInt(lector.next( ));
-					view.printMessage("Ingrese longitud del primer vertice:");
-					int longitudDes= Integer.parseInt(lector.next());
-                    modelo.caminoDeCostoMinimoDistancia(latitudOr, longitudOr, latitudDes, longitudDes);				
+					view.printMessage(
+							"Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
+					view.printMessage( "Ingrese latitud del primer vertice:" );
+					int latitudOr = Integer.parseInt( lector.next( ) );
+					view.printMessage( "Ingrese longitud del primer vertice:" );
+					int longitudOr = Integer.parseInt( lector.next( ) );
+					view.printMessage( "Ingrese latitud del vertice de destino:" );
+					int latitudDes = Integer.parseInt( lector.next( ) );
+					view.printMessage( "Ingrese longitud del primer vertice:" );
+					int longitudDes = Integer.parseInt( lector.next( ) );
+
+					try
+					{
+						modelo.caminoDeCostoMinimoDistancia( latitudOr, longitudOr, latitudDes, longitudDes );
+					}
+					catch( IOException e2 )
+					{
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
 					break;
-				
+
+				case 3:
+					view.printJump( );
+					view.printMessage(
+							"Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
+					view.printMessage( "Ingrese latitud del vértice de origen:" );
+					double lat1 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese longitud del vértice de origen:" );
+					double long1 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese latitud del vértice de destino:" );
+					double lat2 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese longitud del vértice de destino:" );
+					double long2 = Double.parseDouble( lector.next( ) );
+
+					try
+					{
+						modelo.caminoDeCostoMinimoNumeroComparendos( lat1, long1, lat2, long2 );
+					}
+					catch( IOException e2 )
+					{
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
+					break;
+
 				case 4:
 					view.printJump( );
 					view.printMessage( "Ingrese M = " );
@@ -233,30 +268,32 @@ public class Controller
 					}
 					catch( IOException e1 )
 					{
-						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
 					}
 					break;
-					
+
 				case 6:
 					view.printJump( );
 					view.printMessage( "" );
-					
+
 					try
 					{
 						view.printMessage( modelo.identificarZonasDeImpacto( ) );
 					}
 					catch( NullPointerException e )
 					{
-						view.printMessage( "* Asegúrese de efectuar correctamente la carga de los comparendos antes *\n" );
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *\n" );
 						e.printStackTrace( );
 					}
 					catch( IOException e )
 					{
 						view.printMessage( "* Asegúrese de tener los archivos necesarios .txt para el HTML. *\n" );
 					}
-					
+
 					break;
-					
+
 				case 7:
 					view.printJump( );
 					view.printMessage( "\n¡Hasta pronto!\n" );
@@ -272,7 +309,7 @@ public class Controller
 			}
 		}
 	}
-	
+
 	private boolean opcionExiste( int opcion, int[] posiblesOpciones )
 	{
 		for( int i = 0; i < posiblesOpciones.length; i++ )

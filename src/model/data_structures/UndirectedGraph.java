@@ -143,6 +143,25 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	}
 
 	/**
+	 * @param v Uno de los vértices del arco.
+	 * @param w Otro vértice del arco.
+	 * @return Costo de tipo integer del arco entre los vértices dados por
+	 *         parámetros.
+	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
+	 */
+	public int getEdgeIntegerCost( int v, int w ) throws IllegalArgumentException
+	{
+		validateVertex( v );
+		validateVertex( w );
+
+		for( Edge<K, V, L> e : edgesAdjacentTo( v ) )
+			if( e.either( ) == w || e.other( e.either( ) ) == w ) // Comprueba que este sí sea el arco.
+				return e.getIntegerCost( );
+
+		return ( int ) INFINITY; // Si el arco no existe.
+	}
+
+	/**
 	 * Asigna el costo de tipo integer a un arco.
 	 * @param v    Uno de los vértices del arco.
 	 * @param w    Otro vértice del arco.

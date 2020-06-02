@@ -1,6 +1,5 @@
 package model.logic;
 
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
@@ -171,7 +170,7 @@ public class Modelo
 			while( ++i < comparendos.getSize( ) )
 			{
 				c = comparendos.peekPosition( i );
-				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 0.5 );
+				verticeMasCercano = darVerticeMasCercanoA( c.darLatitud( ), c.darLongitud( ), 0.05 );
 				grafoFD.insertVertexItem( verticeMasCercano, verticeMasCercano + "", c );
 			}
 		}
@@ -193,7 +192,7 @@ public class Modelo
 			while( ++i < estaciones.getSize( ) )
 			{
 				EstacionPolicia e = estaciones.peekPosition( i );
-				int verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.1 );
+				int verticeMasCercano = darVerticeMasCercanoA( e.darLatitud( ), e.darLongitud( ), 0.05 );
 				grafoFD.setVertexDistinctiveItem( verticeMasCercano, e );
 			}
 		}
@@ -488,11 +487,13 @@ public class Modelo
 
 		return darReporteGrafo( grafoJS );
 	}
-    // ------------------------------------------------------------------------------------------------------------
+
+	// ------------------------------------------------------------------------------------------------------------
 	// PARTE A
-	//------------------------------------------------------------------------------------------------------------
+	// ------------------------------------------------------------------------------------------------------------
+	
 	/**
-	 * Parte A, punto 1.
+	 * PARTE A. Punto 1.
 	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco
 	 * como medida base.
 	 * El punto de origen y destino son ingresados por el usuario como latitudes y
@@ -500,19 +501,20 @@ public class Modelo
 	 * límites encontrados de la ciudad).
 	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla
 	 * vial.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
 			double longitudDes ) throws IOException
 	{
-	  int verticeOrigen = darVerticeMasCercanoA(latitudOr,longitudOr,50);
-	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
-	  Dijkstra shortestPath=  new Dijkstra(grafoFD,verticeOrigen,verticeDestino);
-      shortestPath.print(verticeDestino, grafoFD);
-      UndirectedGraph<?, ?, Integer> g = shortestPath.crearGrafo(grafoFD, verticeDestino);
-      pintarCaminoDeCostoMinimoGoogleMaps(g);	
+		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 0.05 );
+		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 0.05 );
+		Dijkstra shortestPath = new Dijkstra( grafoFD, verticeOrigen, verticeDestino );
+		shortestPath.print( verticeDestino, grafoFD );
+		@SuppressWarnings( "unchecked" )
+		UndirectedGraph<?, ?, Integer> g = shortestPath.crearGrafo( grafoFD, verticeDestino );
+		pintarCaminoDeCostoMinimoGoogleMaps( g );
 	}
-	
+
 	/**
 	 * PARTE A. Punto 1.
 	 * @return Reporte con la información solicitada.
@@ -524,13 +526,13 @@ public class Modelo
 
 		// Se itera sobre los vertices.
 		int i = -1;
-		while( ++i < g.numberOfVertices() )
+		while( ++i < g.numberOfVertices( ) )
 		{
 			String infoVertice = g.getVertexInfo( i );
 			String latitud1 = infoVertice.split( "," )[1];
 			String longitud1 = infoVertice.split( "," )[0];
 
-			w = pintarUnCirculo( w, VALOR_RADIO , colores[i], latitud1, longitud1 );
+			w = pintarUnCirculo( w, VALOR_RADIO, colores[i], latitud1, longitud1 );
 
 			// Se itera sobre las adyacencias.
 			for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
@@ -547,19 +549,47 @@ public class Modelo
 		finalizarHTML( w );
 		abrirGrafoEnNavegador( );
 	}
+
 	/**
-	 * Parte A, punto 2
-	 * Determinar la red de comunicaciones que soporte la instalación de cámaras de video 
-	 * en los M puntos donde se presenta el mayor número de comparendos en la ciudad.
+	 * PARTE A. Punto 2.
+	 * Determinar la red de comunicaciones que soporte la instalación de cámaras de
+	 * video
+	 * en los M puntos donde se presenta el mayor número de comparendos en la
+	 * ciudad.
 	 */
-	public void redDeComunicacionesCamaraDeVideo(int M)
+	public void redDeComunicacionesCamaraDeVideo( int M )
 	{
 		
 	}
+	
 	// ---------------------------------------------------------------------------------------------------------------------------
 	// PARTE B
 	// ---------------------------------------------------------------------------------------------------------------------------
 
+	/**
+	 * PARTE B. Punto 1.
+	 * @throws IOException Si hay un problema en la lectura del archivo.
+	 */
+	public String caminoDeCostoMinimoNumeroComparendos( double latitudOr, double longitudOr, double latitudDes,
+			double longitudDes ) throws IOException
+	{
+		String reporte = "";
+		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 0.05 );
+		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 0.05 );
+		Dijkstra sp = new Dijkstra( grafoFD, verticeOrigen, verticeDestino, Dijkstra.TipoCosto.INTEGER );
+		
+		reporte += "Total de vértices = " + sp.tamanio + "\n";
+		reporte += "Costo mínimo: " + sp.totalIntegerCost + " comparendos\n";
+		reporte += "Secuencia de vértices:\n\n";
+		reporte += sp.print( verticeDestino, grafoFD );
+		reporte += "Distancia total: "+ sp.totalDoubleCost + " km\n";
+		
+		@SuppressWarnings( "unchecked" )
+		UndirectedGraph<?, ?, Integer> g = sp.crearGrafo( grafoFD, verticeDestino );
+		pintarCaminoDeCostoMinimoGoogleMaps( g );
+		return reporte;
+	}
+	
 	/**
 	 * Crea una cola de prioridad de vértices ordenándolos de mayor a menor según el
 	 * número de comparendos dentro.
@@ -670,26 +700,19 @@ public class Modelo
 	 * PARTE C. Punto 1.
 	 * @return Grafo de las zonas de impacto.
 	 */
-	 public UndirectedGraph<?,?,Integer> CaminosMasCortosParaComparendosMasGraves(int M)
-	 {
-	 UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
-	 Queue<Comparendo> comp = new Queue<>() ;
-	 for (int i = 0; i < M; i++) {
-		Comparendo actual = comparendos.poll();
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		comp.enQueue(actual);
-	 }
-	 return g;
-	 }
-	
+	public UndirectedGraph<?, ?, Integer> CaminosMasCortosParaComparendosMasGraves( int M )
+	{
+		UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
+		Queue<Comparendo> comp = new Queue<>( );
+		for( int i = 0; i < M; i++ )
+		{
+			Comparendo actual = comparendos.poll( );
+
+			comp.enQueue( actual );
+		}
+		return g;
+	}
+
 	/**
 	 * PARTE C. Punto 2.
 	 * @return Grafo de las zonas de impacto.
@@ -1000,12 +1023,13 @@ public class Modelo
 			{
 				Iterator<Comparendo> iter = grafoFD.vertexItems( i );
 
-				if( mayor == null )
+				if( mayor == null && iter.hasNext( ) )
 					mayor = iter.next( );
 
 				while( iter.hasNext( ) )
 				{
 					Comparendo c = iter.next( );
+					
 					if( c.darId( ) > mayor.darId( ) )
 						mayor = c;
 				}
@@ -1132,7 +1156,6 @@ public class Modelo
 
 		return cadena;
 	}
-
 
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.

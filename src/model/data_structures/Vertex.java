@@ -29,7 +29,6 @@ public class Vertex<K extends Comparable<K>, V extends Comparable<V>, E extends 
 	 */
 	private E distinctiveItem;
      
-	private int weight;
 	/**
 	 * Inicializa un vértice con el ID dado por parámetro.
 	 * @param id ID del vértice. 0 <= id

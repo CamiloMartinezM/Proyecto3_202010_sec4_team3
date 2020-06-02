@@ -5,7 +5,8 @@ import java.util.Iterator;
 /**
  * Interfaz que debe implementar la clase UndirectedGraph.
  * @author Camilo Martínez & Nicolás Quintero
- * @param <K> Tipo de llave que se guardará en las tablas de hash con la información.
+ * @param <K> Tipo de llave que se guardará en las tablas de hash con la
+ *            información.
  * @param <V> Tipo de valor o item que se guardará en cada vertice.
  */
 public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>>
@@ -28,6 +29,15 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	 * @return Costo del arco entre los vertices dados por parámetros.
 	 */
 	public double getEdgeDoubleCost( int v, int w );
+
+	/**
+	 * @param v Uno de los vértices del arco.
+	 * @param w Otro vértice del arco.
+	 * @return Costo de tipo integer del arco entre los vértices dados por
+	 *         parámetros.
+	 * @throws IllegalArgumentException Si alguno de los vértices no son válidos.
+	 */
+	public int getEdgeIntegerCost( int v, int w ) throws IllegalArgumentException;
 
 	/**
 	 * Returns the degree of the given vertex.
@@ -60,7 +70,8 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	 * @param v
 	 * @return vertice solicitado.
 	 */
-	public Vertex<K, V, L> getVertex(int v);
+	public Vertex<K, V, L> getVertex( int v );
+
 	/**
 	 * @param v Vertice.
 	 * @return Información del vertice.
@@ -74,7 +85,7 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	 *         igual al id del vertice.
 	 */
 	public Iterator<V> vertexItems( int v );
-	
+
 	/**
 	 * Iterador sobre todos los ID's de los vértices adyacentes al vértice cuyo ID
 	 * es dado por parámetro.
@@ -83,7 +94,7 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
 	public Iterator<Integer> vertexAdjacentTo( int v ) throws IllegalArgumentException;
-	
+
 	/**
 	 * Iterador sobre todos los arcos adyacentes al vértice cuyo ID es dado por
 	 * parámetro.
