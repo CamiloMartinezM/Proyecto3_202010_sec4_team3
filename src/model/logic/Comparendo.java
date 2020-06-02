@@ -123,7 +123,7 @@ public class Comparendo implements Comparable<Comparendo>
 		this.descripcionInfraccion = causaInfraccion;
 		this.localidad = localidad;
 		this.coordenada = coordenada;
-		this.comparador = Comparador.LATITUD; // Comparador predeterminado es la gravedad.
+		this.comparador = Comparador.GRAVEDAD; // Comparador predeterminado es la gravedad.
 	}
 
 	/**

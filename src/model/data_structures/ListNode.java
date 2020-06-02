@@ -4,12 +4,22 @@ package model.data_structures;
  * Clase que contiene la información de un comparendo.
  * @author Camilo Martínez & Nicolás Quintero
  */
-public class ListNode<E>
+public class ListNode<E> implements Comparable<ListNode<E>>
 {
 	/**
 	 * Referencia al siguiente nodo.
 	 */
 	private ListNode<E> next;
+
+	/**
+	 * ID del nodo. En caso de no usarse, es 0.
+	 */
+	public int id;
+
+	/**
+	 * Valor double guardado en el nodo. En caso de no usarse, es 0.
+	 */
+	public double value;
 
 	/**
 	 * Referencia al item contenido dentro del Nodo.
@@ -23,6 +33,8 @@ public class ListNode<E>
 	{
 		this.next = null;
 		this.item = null;
+		this.value = 0;
+		this.id = 0;
 	}
 
 	/**
@@ -33,6 +45,17 @@ public class ListNode<E>
 	{
 		this.next = null;
 		this.item = item;
+	}
+
+	/**
+	 * Inicializa un nodo vacío con un ID y valor dado.
+	 */
+	public ListNode( int id, double value )
+	{
+		this.next = null;
+		this.item = null;
+		this.value = value;
+		this.id = id;
 	}
 
 	/**
@@ -67,5 +90,14 @@ public class ListNode<E>
 	public void setItem( E item )
 	{
 		this.item = item;
+	}
+
+	@Override
+	public int compareTo( ListNode<E> o )
+	{
+		if( Math.abs( this.value - o.value ) < 1e-6 )
+			return 0;
+		
+		return ( this.value - o.value ) > 0 ? +1 : -1;
 	}
 }

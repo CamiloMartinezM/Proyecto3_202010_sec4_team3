@@ -90,7 +90,7 @@ public class TestMaxHeapPQ
 		heap.insert( 104 );
 
 		assertEquals( "No insertó bien.", 104, heap.peek( ).intValue( ) );
-		assertEquals( "No insertó bien.", 104, heap.peekPosition( 1 ).intValue( ) );
+		assertEquals( "No insertó bien.", 104, heap.peekPosition( 0 ).intValue( ) );
 	}
 
 	@Test
@@ -116,9 +116,9 @@ public class TestMaxHeapPQ
 
 		setUp2( );
 
-		assertEquals( "Debió retornar 103.", 103, heap.peekPosition( 1 ).intValue( ) );
-		assertEquals( "Debió retornar 102.", 102, heap.peekPosition( 2 ).intValue( ) );
-		assertEquals( "Debió retornar 101.", 101, heap.peekPosition( 3 ).intValue( ) );
+		assertEquals( "Debió retornar 103.", 103, heap.peekPosition( 0 ).intValue( ) );
+		assertEquals( "Debió retornar 102.", 102, heap.peekPosition( 1 ).intValue( ) );
+		assertEquals( "Debió retornar 101.", 101, heap.peekPosition( 2 ).intValue( ) );
 	}
 
 	@Test

@@ -150,6 +150,14 @@ public class LinkedList<T> implements ILinkedList<T>
 	}
 
 	/**
+	 * Invierte la lista actual.
+	 */
+	public void invert( )
+	{
+		head = reverse( head );
+	}
+	
+	/**
 	 * Iterador.
 	 */
 	public Iterator<T> iterator( )
@@ -167,7 +175,7 @@ public class LinkedList<T> implements ILinkedList<T>
 						return true;
 					else
 						return false;
-					
+
 				return actual != last;
 			}
 
@@ -179,7 +187,7 @@ public class LinkedList<T> implements ILinkedList<T>
 					i++;
 					return head.getItem( );
 				}
-				
+
 				if( actual == null )
 				{
 					actual = head;
@@ -191,5 +199,26 @@ public class LinkedList<T> implements ILinkedList<T>
 				return actual.getItem( );
 			}
 		};
+	}
+	
+	/**
+	 * Devuelve la lista en orden inverso.
+	 * @param node Nodo inicial. node != null
+	 * @return Lista en orden inverso
+	 */
+	private ListNode<T> reverse( ListNode<T> node )
+	{
+		ListNode<T> prev = null;
+		ListNode<T> current = node;
+		ListNode<T> next = null;
+		while( current != null )
+		{
+			next = current.getNext( );
+			current.setNext( prev );
+			prev = current;
+			current = next;
+		}
+		node = prev;
+		return node;
 	}
 }

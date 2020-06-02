@@ -19,7 +19,6 @@ public class Controller
 	private final static String ARCHIVO_ESTACIONES = "./data/estacionpolicia.geojson";
 	private final static String ARCHIVO_VERTICES = "./data/bogota_vertices.txt";
 	private final static String ARCHIVO_ARCOS = "./data/bogota_arcos.txt";
-	private final static String ARCHIVO_JSON = "./data/grafo_en_json.json";
 
 	/**
 	 * Instancia del modelo.
@@ -103,7 +102,8 @@ public class Controller
 		}
 
 		fin = false;
-
+		double lat1, long1, lat2, long2;
+		int M;
 		while( !fin )
 		{
 			view.printJump( );
@@ -188,44 +188,18 @@ public class Controller
 
 				case 1:
 					view.printJump( );
-					view.printMessage(
-							"Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
-					view.printMessage( "Ingrese latitud del primer vertice:" );
-					int latitudOr = Integer.parseInt( lector.next( ) );
-					view.printMessage( "Ingrese longitud del primer vertice:" );
-					int longitudOr = Integer.parseInt( lector.next( ) );
-					view.printMessage( "Ingrese latitud del vertice de destino:" );
-					int latitudDes = Integer.parseInt( lector.next( ) );
-					view.printMessage( "Ingrese longitud del primer vertice:" );
-					int longitudDes = Integer.parseInt( lector.next( ) );
-
-					try
-					{
-						modelo.caminoDeCostoMinimoDistancia( latitudOr, longitudOr, latitudDes, longitudDes );
-					}
-					catch( IOException e2 )
-					{
-						view.printMessage(
-								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
-					}
-					break;
-
-				case 3:
-					view.printJump( );
-					view.printMessage(
-							"Obtener el camino de costo mínimo entre dos ubicaciones geográficas por número de comparendos" );
 					view.printMessage( "Ingrese latitud del vértice de origen:" );
-					double lat1 = Double.parseDouble( lector.next( ) );
+					lat1 = Double.parseDouble( lector.next( ) );
 					view.printMessage( "Ingrese longitud del vértice de origen:" );
-					double long1 = Double.parseDouble( lector.next( ) );
+					long1 = Double.parseDouble( lector.next( ) );
 					view.printMessage( "Ingrese latitud del vértice de destino:" );
-					double lat2 = Double.parseDouble( lector.next( ) );
+					lat2 = Double.parseDouble( lector.next( ) );
 					view.printMessage( "Ingrese longitud del vértice de destino:" );
-					double long2 = Double.parseDouble( lector.next( ) );
+					long2 = Double.parseDouble( lector.next( ) );
 
 					try
 					{
-						modelo.caminoDeCostoMinimoNumeroComparendos( lat1, long1, lat2, long2 );
+						view.printMessage( modelo.caminoDeCostoMinimoDistancia( lat1, long1, lat2, long2 ) );
 					}
 					catch( IOException e2 )
 					{
@@ -234,10 +208,10 @@ public class Controller
 					}
 					break;
 
-				case 4:
+				case 2:
 					view.printJump( );
 					view.printMessage( "Ingrese M = " );
-					int M = 0;
+					M = 0;
 					ocurrioExcepcion = true;
 					while( ocurrioExcepcion )
 					{
@@ -264,7 +238,68 @@ public class Controller
 					view.printMessage( "" );
 					try
 					{
-						view.printMessage( modelo.crearRedDeComunicaciones( M ) );
+						view.printMessage( modelo.crearRedDeComunicacionesGravedad( M ) );
+					}
+					catch( IOException e1 )
+					{
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
+					break;
+					
+				case 3:
+					view.printJump( );
+					view.printMessage( "Ingrese latitud del vértice de origen:" );
+					lat1 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese longitud del vértice de origen:" );
+					long1 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese latitud del vértice de destino:" );
+					lat2 = Double.parseDouble( lector.next( ) );
+					view.printMessage( "Ingrese longitud del vértice de destino:" );
+					long2 = Double.parseDouble( lector.next( ) );
+
+					try
+					{
+						view.printMessage( modelo.caminoDeCostoMinimoNumeroComparendos( lat1, long1, lat2, long2 ) );
+					}
+					catch( IOException e2 )
+					{
+						view.printMessage(
+								"* Asegúrese de efectuar correctamente la carga de los comparendos antes *" );
+					}
+					break;
+
+				case 4:
+					view.printJump( );
+					view.printMessage( "Ingrese M = " );
+					M = 0;
+					ocurrioExcepcion = true;
+					while( ocurrioExcepcion )
+					{
+						try
+						{
+							M = Integer.parseInt( lector.next( ) );
+							if( M <= 1 )
+								throw new Exception( "Ingrese un entero positivo válido, M = " );
+							ocurrioExcepcion = false;
+						}
+						catch( NullPointerException | NumberFormatException e )
+						{
+							view.printMessage( "Digite un entero positivo válido, M = " );
+							ocurrioExcepcion = true;
+						}
+						catch( Exception e )
+						{
+							view.printMessage( e.getMessage( ) );
+							ocurrioExcepcion = true;
+						}
+					}
+
+					view.printJump( );
+					view.printMessage( "" );
+					try
+					{
+						view.printMessage( modelo.crearRedDeComunicacionesNumeroComparendos( M ) );
 					}
 					catch( IOException e1 )
 					{

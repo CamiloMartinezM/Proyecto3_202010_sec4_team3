@@ -24,7 +24,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.data_structures.Edge;
+import model.data_structures.CostType;
 import model.data_structures.Dijkstra;
+import model.data_structures.DijkstrasShortestPath;
 import model.data_structures.HashTable;
 import model.data_structures.IGraph;
 import model.data_structures.MST;
@@ -494,33 +496,86 @@ public class Modelo
 
 	/**
 	 * PARTE A. Punto 1.
-	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco
-	 * como medida base.
-	 * El punto de origen y destino son ingresados por el usuario como latitudes y
-	 * longitudes (debe validarse que dichos puntos se encuentren dentro de los
-	 * límites encontrados de la ciudad).
-	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla
-	 * vial.
-	 * @throws IOException
+	 * @throws IOException Si hubo un problema de lectura de archivos.
 	 */
-	public void caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
+	public String caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
 			double longitudDes ) throws IOException
 	{
 		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 0.05 );
 		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 0.05 );
-		Dijkstra shortestPath = new Dijkstra( grafoFD, verticeOrigen, verticeDestino );
-		shortestPath.print( verticeDestino, grafoFD );
-		@SuppressWarnings( "unchecked" )
-		UndirectedGraph<?, ?, Integer> g = shortestPath.crearGrafo( grafoFD, verticeDestino );
+		DijkstrasShortestPath dsp = new DijkstrasShortestPath( grafoFD, CostType.DOUBLE );
+		double costoMinimo = dsp.dijkstra( verticeOrigen, verticeDestino );
+		Iterable<Integer> camino = dsp.reconstructPath( verticeOrigen, verticeDestino );
+		int tamanio = 0;
+		Iterator<Integer> i = camino.iterator( ); 
+		while( i.hasNext( ) )
+		{
+			tamanio++;
+			i.next( );
+		}
+		
+		String reporte = "Secuencia de vértices:\n\n";	
+		i = camino.iterator( ); 
+		int anterior = i.next( ), siguiente;
+		while( i.hasNext( ) )
+		{
+			siguiente = i.next( );
+			reporte += anterior + " - " + siguiente + "\n"; 
+			anterior = siguiente;
+		}
+		
+		reporte += "\nTotal de vértices = " + tamanio + "\n";
+		reporte += "Costo mínimo: " + costoMinimo + " comparendos\n";
+		
+		UndirectedGraph<?, ?, ?> g = crearGrafoDeDijkstra( camino );
+		Iterator<String> iter = g.edgesWithCost( );
+		double distancia = 0;
+		while( iter.hasNext( ) )
+			distancia += Double.valueOf( iter.next( ).split( "," )[2] );
+		
+		reporte += "Distancia total: " + distancia + " km\n";
+		
 		pintarCaminoDeCostoMinimoGoogleMaps( g );
+		return reporte;
 	}
 
 	/**
+	 * Crea un grafo no dirigido a partir de un camino de Dijkstra.
+	 * @param i Camino de dijkstra. i != null
+	 * @return Grafo no dirigido.
+	 */
+	public UndirectedGraph<?, ?, ?> crearGrafoDeDijkstra( Iterable<Integer> i )
+	{
+		Iterator<Integer> iter = i.iterator( );
+		int n = 0;
+		while( iter.hasNext( ) )
+		{
+			n++;
+			iter.next( );
+		}
+		
+		UndirectedGraph<?, ?, ?> g = new UndirectedGraph<>( n );
+		iter = i.iterator( );
+		int anterior = iter.next( ), siguiente, x = 0, y = 0;
+		while( iter.hasNext( ) )
+		{
+			siguiente = iter.next( );
+			y++;
+			g.addEdge( x, y, grafoFD.getEdgeDoubleCost( anterior, siguiente ) ); 
+			g.setVertexInfo( x, grafoFD.getVertexInfo( anterior ) );
+			g.setVertexInfo( y, grafoFD.getVertexInfo( siguiente ) );
+			anterior = siguiente;
+			x = y;
+		}
+		
+		return g;
+	}
+	
+	/**
 	 * PARTE A. Punto 1.
-	 * @return Reporte con la información solicitada.
 	 * @throws IOException Si hay un problema en la lectura de algún archivo.
 	 */
-	public void pintarCaminoDeCostoMinimoGoogleMaps( UndirectedGraph<?, ?, Integer> g ) throws IOException
+	public void pintarCaminoDeCostoMinimoGoogleMaps( UndirectedGraph<?, ?, ?> g ) throws IOException
 	{
 		FileWriter w = inicializarHTML( );
 
@@ -532,15 +587,15 @@ public class Modelo
 			String latitud1 = infoVertice.split( "," )[1];
 			String longitud1 = infoVertice.split( "," )[0];
 
-			w = pintarUnCirculo( w, VALOR_RADIO, colores[i], latitud1, longitud1 );
+			w = pintarUnCirculo( w, VALOR_RADIO / 4, colores[0], latitud1, longitud1 );
 
 			// Se itera sobre las adyacencias.
-			for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
+			for( Edge e : g.edgesAdjacentTo( i ) )
 			{
 				String latitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[1];
 				String longitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[0];
-				w = pintarUnaLinea( w, colores[i], latitud1, longitud1, latitud2, longitud2 );
-				w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[i], latitud2, longitud2 );
+				w = pintarUnaLinea( w, colores[0], latitud1, longitud1, latitud2, longitud2 );
+				w = pintarUnCirculo( w, VALOR_RADIO / 8, colores[0], latitud2, longitud2 );
 			}
 
 			i++;
@@ -552,29 +607,31 @@ public class Modelo
 
 	/**
 	 * PARTE A. Punto 2.
-	 * Determinar la red de comunicaciones que soporte la instalación de cámaras de
-	 * video
-	 * en los M puntos donde se presenta el mayor número de comparendos en la
-	 * ciudad.
 	 * @throws IOException Si hay un problema de lectura de archivos.
 	 */
-	public String redDeComunicacionesCamaraDeVideo( int M ) throws IOException
+	public String crearRedDeComunicacionesGravedad( int M ) throws IOException
 	{
 		String reporte = "";
 		Stopwatch timer = new Stopwatch( );
-		crearMaxHeapDeMayorNumeroComparendos( );
 		UndirectedGraph<?, ?, ?> g = crearGrafoCompletamenteConexo( comparendos, M );
 		int i = 0;
 		MST<?, ?, ?> arbol = new MST<>( g );
 		reporte += "Tiempo que toma el algoritmo en encontrar la solución: " + timer.elapsedTime( ) + " ms\n";
 		reporte += "Total de vértices en el componente: " + M + "\n\n";
 		reporte += "Lista de vértices involucrados:\n\n";
-		while( i < comparendos.getSize( ) && i < M )
+		ArrayList<Comparendo> polleados = new ArrayList<>( );
+		while( !comparendos.isEmpty( ) && i < M )
 		{
-			Comparendo actual = comparendos.peekPosition( i );
+			Comparendo actual = comparendos.poll( );
+			polleados.add( actual );
 			reporte += "\tVértice de ID " + actual.darIdVertex( ) + " con "
 					+ grafoFD.getVertex( actual.darIdVertex( ) ).numberOfItems( ) + "\n";
+			i++;
 		}
+		
+		for( Comparendo c : polleados )
+			comparendos.insert( c );
+		
 		reporte += "\nLista de arcos en el MST:\n\n";
 		for( Edge<?, ?, ?> e : arbol )
 			reporte += "\t" + e.either( ) + " - " + e.other( e.either( ) ) + "\n";
@@ -596,12 +653,18 @@ public class Modelo
 	{
 		UndirectedGraph<?, ?, ?> g = new UndirectedGraph<>( M );
 		int k = 0;
-		while( k < comparendos.getSize( ) && k < M )
+		ArrayList<Comparendo> polleados = new ArrayList<>( );
+		while( !comparendos.isEmpty( ) && k < M )
 		{
-			Comparendo actual = comparendos.peekPosition( k );
+			Comparendo actual = comparendos.poll( );
+			polleados.add( actual );
 			g.setVertexInfo( k, grafoFD.getVertex( actual.darIdVertex( ) ).getInfo( ) );
 			k++;
 		}
+		
+		for( Comparendo c : polleados )
+			comparendos.insert( c );
+		
 		for( int i = 0; i < M; i++ )
 		{
 			double latitud1 = Double.parseDouble( g.getVertexInfo( i ).split( "," )[1] );
@@ -630,19 +693,40 @@ public class Modelo
 	public String caminoDeCostoMinimoNumeroComparendos( double latitudOr, double longitudOr, double latitudDes,
 			double longitudDes ) throws IOException
 	{
-		String reporte = "";
 		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 0.05 );
 		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 0.05 );
-		Dijkstra sp = new Dijkstra( grafoFD, verticeOrigen, verticeDestino, Dijkstra.TipoCosto.INTEGER );
-
-		reporte += "Total de vértices = " + sp.tamanio + "\n";
-		reporte += "Costo mínimo: " + sp.totalIntegerCost + " comparendos\n";
-		reporte += "Secuencia de vértices:\n\n";
-		reporte += sp.print( verticeDestino, grafoFD );
-		reporte += "Distancia total: " + sp.totalDoubleCost + " km\n";
-
-		@SuppressWarnings( "unchecked" )
-		UndirectedGraph<?, ?, Integer> g = sp.crearGrafo( grafoFD, verticeDestino );
+		DijkstrasShortestPath dsp = new DijkstrasShortestPath( grafoFD, CostType.INTEGER );
+		double costoMinimo = dsp.dijkstra( verticeOrigen, verticeDestino );
+		Iterable<Integer> camino = dsp.reconstructPath( verticeOrigen, verticeDestino );
+		int tamanio = 0;
+		Iterator<Integer> i = camino.iterator( ); 
+		while( i.hasNext( ) )
+		{
+			tamanio++;
+			i.next( );
+		}
+		
+		String reporte = "Secuencia de vértices:\n\n";		
+		i = camino.iterator( ); 
+		int anterior = i.next( ), siguiente;
+		while( i.hasNext( ) )
+		{
+			siguiente = i.next( );
+			reporte += anterior + " - " + siguiente + "\n"; 
+			anterior = siguiente;
+		}
+		
+		reporte += "\nTotal de vértices = " + tamanio + "\n";
+		reporte += "Costo mínimo: " + costoMinimo + " comparendos\n";
+		
+		UndirectedGraph<?, ?, ?> g = crearGrafoDeDijkstra( camino );
+		Iterator<String> iter = g.edgesWithCost( );
+		double distancia = 0;
+		while( iter.hasNext( ) )
+			distancia += Double.valueOf( iter.next( ).split( "," )[2] );
+		
+		reporte += "Distancia total: " + distancia + " km\n";
+		
 		pintarCaminoDeCostoMinimoGoogleMaps( g );
 		return reporte;
 	}
@@ -696,7 +780,7 @@ public class Modelo
 	 * @return Reporte con la información importante.
 	 * @throws IOException Si hay un problema de lectura de algún archivo.
 	 */
-	public String crearRedDeComunicaciones( int M ) throws IOException
+	public String crearRedDeComunicacionesNumeroComparendos( int M ) throws IOException
 	{
 		String reporte = "";
 		Stopwatch timer = new Stopwatch( );
@@ -813,15 +897,15 @@ public class Modelo
 			String latitud1 = infoVertice.split( "," )[1];
 			String longitud1 = infoVertice.split( "," )[0];
 
-			w = pintarUnCirculo( w, VALOR_RADIO, colores[i], latitud1, longitud1 );
+			w = pintarUnCirculo( w, VALOR_RADIO, colores[0], latitud1, longitud1 );
 
 			// Se itera sobre las adyacencias.
 			for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
 			{
 				String latitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[1];
 				String longitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[0];
-				w = pintarUnaLinea( w, colores[i], latitud1, longitud1, latitud2, longitud2 );
-				w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[i], latitud2, longitud2 );
+				w = pintarUnaLinea( w, colores[0], latitud1, longitud1, latitud2, longitud2 );
+				w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[0], latitud2, longitud2 );
 			}
 
 			i++;
@@ -939,7 +1023,7 @@ public class Modelo
 			String longitud1 = infoVertice.split( "," )[0];
 
 			// Se cuentan los comparendos contenidos en esta estación.
-			double incrementador = 3 * ( 1 + 100 * g.getVertexDistinctiveItem( i ) / grafoFD.numberOfStoredItems( ) );
+			double incrementador = 3 * ( 1 + 10 * g.getVertexDistinctiveItem( i ) / grafoFD.numberOfStoredItems( ) );
 
 			w = pintarUnCirculo( w, VALOR_RADIO * incrementador, colores[i], latitud1, longitud1 );
 

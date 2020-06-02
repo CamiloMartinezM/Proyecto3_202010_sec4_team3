@@ -6,6 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import model.logic.Comparendo;
+import model.logic.Comparendo.Comparador;
 
 /**
  * Test de la clase comparendo.
@@ -29,6 +30,9 @@ public class TestComparendo
 		c[3] = new Comparendo( 3, "", "", "", "Público", "B10", "", "", new double[] { 1, 4 } );
 		c[4] = new Comparendo( 4, "", "", "", "Público", "B11", "", "", new double[] { 1, 5 } );
 		c[5] = new Comparendo( 4, "", "", "", "Público", "B12", "", "", new double[] { 1, 5 } );
+		
+		for( int i = 0; i < c.length; i++ )
+			c[i].cambiarComparador( Comparador.GRAVEDAD );
 	}
 
 	public void setUp2( )
@@ -39,6 +43,9 @@ public class TestComparendo
 		c[3] = new Comparendo( 3, "", "", "", "Oficial", "B11", "", "", new double[] { 1, 2 } );
 		c[4] = new Comparendo( 4, "", "", "", "Público", "B12", "", "", new double[] { 1, 3 } );
 		c[5] = new Comparendo( 5, "", "", "", "Público", "B13", "", "", new double[] { 1, 3 } );
+		
+		for( int i = 0; i < c.length; i++ )
+			c[i].cambiarComparador( Comparador.GRAVEDAD );
 	}
 
 	@Test

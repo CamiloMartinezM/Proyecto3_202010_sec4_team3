@@ -50,6 +50,12 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	public HashTable<Integer, Vertex<K, V, L>> vertex;
 
 	/**
+	 * Tipo de costo que retornar cuando se itera sobre los arcos. DOUBLE es el
+	 * predeterminado.
+	 */
+	public CostType t = CostType.DOUBLE;
+
+	/**
 	 * Inicializa un grafo con el número de vértices dados por parámetro y 0 arcos.
 	 * @param numberOfVertices Número de vértices.
 	 * @throws IllegalArgumentException Si el número de vértices es menor a 0.
@@ -433,6 +439,69 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	}
 
 	/**
+	 * Iterador sobre todos los arcos existentes en forma de cadena de los ID's de
+	 * los vértices del arco concatenados con un "-".
+	 * @param t Tipo de costo que se quiere. t != null
+	 * @return Iterador sobre todos los arcos v-w existentes.
+	 */
+	public Iterator<String> edgesWithCost( )
+	{
+		return new Iterator<String>( )
+		{
+			private String actual = "";
+			private int i = -1;
+			private int numArcosRevisados = 0;
+			private Iterator<Edge<K, V, L>> bolsaActual = null;
+			private HashTable<String, Integer> arcosYaRevisados = new HashTable<String, Integer>( E, true );
+
+			@Override
+			public boolean hasNext( )
+			{
+				return numArcosRevisados < E;
+			}
+
+			@Override
+			public String next( )
+			{
+				if( actual == "" || bolsaActual == null || !bolsaActual.hasNext( ) )
+					buscarSiguientePosicionI( );
+
+				boolean primeraVez = true;
+				while( arcosYaRevisados.contains( actual ) || primeraVez )
+				{
+					primeraVez = false;
+					if( !bolsaActual.hasNext( ) )
+						buscarSiguientePosicionI( );
+
+					Edge<K, V, L> e = bolsaActual.next( );
+
+					if( t == CostType.DOUBLE )
+						actual = e.either( ) + "," + e.other( e.either( ) ) + "," + e.getDoubleCost( );
+					else // INTEGER
+						actual = e.either( ) + "," + e.other( e.either( ) ) + "," + e.getIntegerCost( );
+				}
+
+				arcosYaRevisados.put( actual, 0 );
+
+				numArcosRevisados++;
+				return actual;
+			}
+
+			private void buscarSiguientePosicionI( )
+			{
+				while( ++i < adj.length )
+				{
+					if( adj[i].size( ) > 0 )
+					{
+						bolsaActual = adj[i].iterator( );
+						break;
+					}
+				}
+			}
+		};
+	}
+
+	/**
 	 * @param v ID del vértice.
 	 * @return Número de items guardados en el vértice.
 	 * @throws IllegalArgumentException Si el vértice dado no es válido.
@@ -453,5 +522,11 @@ public class UndirectedGraph<K extends Comparable<K>, V extends Comparable<V>, L
 	{
 		if( v < 0 || v >= V )
 			throw new IllegalArgumentException( "vertex " + v + " is not between 0 and " + ( V - 1 ) );
+	}
+
+	@Override
+	public Iterator<String> iterator( )
+	{
+		return edgesWithCost( );
 	}
 }

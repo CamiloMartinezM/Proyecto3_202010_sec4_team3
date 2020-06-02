@@ -9,7 +9,7 @@ import java.util.Iterator;
  *            información.
  * @param <V> Tipo de valor o item que se guardará en cada vertice.
  */
-public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>>
+public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L extends Comparable<L>> extends Iterable<String>
 {
 	public int numberOfVertices( );
 
@@ -103,4 +103,11 @@ public interface IGraph<K extends Comparable<K>, V extends Comparable<V>, L exte
 	 * @throws IllegalArgumentException Si el vértice no es válido.
 	 */
 	public Iterable<Edge<K, V, L>> edgesAdjacentTo( int v ) throws IllegalArgumentException;
+	
+	/**
+	 * Iterador sobre todos los arcos existentes en forma de cadena de los ID's de
+	 * los vértices del arco concatenados con un "-".
+	 * @return Iterador sobre todos los arcos v-w existentes.
+	 */
+	public Iterator<String> edges( );
 }
