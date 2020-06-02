@@ -94,7 +94,7 @@ public class Comparendo implements Comparable<Comparendo>
 	private Comparador comparador;
 
 	private int idVertex;
-	
+
 	/**
 	 * Inicializa un comparendo con la información dada por parámetro.
 	 * @param id                    Identificador único del comparendo.

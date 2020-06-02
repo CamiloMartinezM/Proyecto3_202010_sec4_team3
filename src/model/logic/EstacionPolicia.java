@@ -21,28 +21,28 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 			"EPOLONGITU", "EPOSERVICIO", "EPOHORARIO", "EPOTELEFON", "EPOCELECTR", "EPOCONTACT", "EPOPWEB",
 			"EPOIUUPLAN", "EPOIUSCATA", "EPOIULOCAL", "EPOEASOCIA", "EPOFUNCION", "EPOTEQUIPA", "EPONOMBRE",
 			"EPOIDENTIF", "EPOFECHA_C" } )
-	
+
 	@JsonProperty( "OBJECTID" )
 	private int id;
 
 	@JsonProperty( "EPODESCRIP" )
 	private String descripcion;
-	
+
 	@JsonProperty( "EPODIR_SITIO" )
 	private String dirSitio;
-	
+
 	@JsonProperty( "EPOSERVICIO" )
 	private String servicio;
-	
+
 	@JsonProperty( "EPOHORARIO" )
 	private String horario;
-	
+
 	@JsonProperty( "EPOTELEFON" )
 	private String telefono;
-	
+
 	@JsonProperty( "EPOIULOCAL" )
 	private String local;
-	
+
 	@JsonProperty( "EPOLATITUD" )
 	private double latitud;
 
@@ -87,7 +87,7 @@ public class EstacionPolicia implements Comparable<EstacionPolicia>
 		informacion.add( "EPOHORARIO: " + horario );
 		informacion.add( "EPOTELEFON: " + telefono );
 		informacion.add( "EPOIULOCAL: " + local );
-		
+
 		for( int i = 0; i < informacion.size( ); i++ )
 			if( mostrar[i] )
 				cadena += "\t" + informacion.get( i ) + "\n";

@@ -558,22 +558,22 @@ public class Modelo
 	 * ciudad.
 	 * @throws IOException Si hay un problema de lectura de archivos.
 	 */
-	public String redDeComunicacionesCamaraDeVideo(int M) throws IOException
+	public String redDeComunicacionesCamaraDeVideo( int M ) throws IOException
 	{
 		String reporte = "";
 		Stopwatch timer = new Stopwatch( );
 		crearMaxHeapDeMayorNumeroComparendos( );
 		UndirectedGraph<?, ?, ?> g = crearGrafoCompletamenteConexo( comparendos, M );
-		int i =0;
+		int i = 0;
 		MST<?, ?, ?> arbol = new MST<>( g );
 		reporte += "Tiempo que toma el algoritmo en encontrar la solución: " + timer.elapsedTime( ) + " ms\n";
 		reporte += "Total de vértices en el componente: " + M + "\n\n";
 		reporte += "Lista de vértices involucrados:\n\n";
-		while( i < comparendos.getSize( )&& i<M )
+		while( i < comparendos.getSize( ) && i < M )
 		{
 			Comparendo actual = comparendos.peekPosition( i );
-			reporte += "\tVértice de ID " + actual.darIdVertex() + " con "
-					+ grafoFD.getVertex(actual.darIdVertex()).numberOfItems() + "\n";
+			reporte += "\tVértice de ID " + actual.darIdVertex( ) + " con "
+					+ grafoFD.getVertex( actual.darIdVertex( ) ).numberOfItems( ) + "\n";
 		}
 		reporte += "\nLista de arcos en el MST:\n\n";
 		for( Edge<?, ?, ?> e : arbol )
