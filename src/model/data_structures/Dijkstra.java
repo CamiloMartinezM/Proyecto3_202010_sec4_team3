@@ -16,19 +16,19 @@ public class Dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
 
 	// lista de adyacencia
 	private double distancia[] = new double[MAX];          // distancia[ u ] distancia de vértice inicial a vértice con
-													          // ID = u
-	private boolean visitado[] = new boolean[MAX];   // para vértices visitados
+  												          // ID = u
+	private boolean visitado[] = new boolean[MAX];     // para vértices visitados
 	private MinHeapPQ<Vertex<K, V, E>> pq;                       // priority queue.
 	private int V;                                      // numero de vertices
 	private int previo[] = new int[MAX];              // para la impresion de caminos
 	private boolean dijkstraEjecutado;
-
+	int tamanio;
 	// inicializamos todas las distancias con valor infinito
 	// inicializamos todos los vértices como no visitados
 	// inicializamos el previo del vertice i con -1
-	private void init( )
+	private void init(IGraph g )
 	{
-		for( int i = 0; i <= V; ++i )
+		for( int i = 0; i <= g.numberOfVertices(); ++i )
 		{
 			distancia[i] = INF;
 			visitado[i] = false;
@@ -51,11 +51,11 @@ public class Dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
 
 	public Dijkstra( IGraph G, int inicial, int destino )
 	{
-		init( ); // inicializamos nuestros arreglos
+		init(G ); // inicializamos nuestros arreglos
 		pq.insert( G.getVertex( inicial ) ); // Insertamos el vértice inicial en la Cola de Prioridad
 		distancia[inicial] = 0;      // Este paso es importante, inicializamos la distancia del inicial como 0
 		Vertex<K, V, E> actual, adyacente;
-		double peso;
+        double peso;
 		while( !pq.isEmpty( ) )
 		{                        // Mientras cola no este vacia
 			actual = pq.poll( );                      // Obtengo de la cola el vertice con menor peso, en un comienzo
@@ -79,19 +79,31 @@ public class Dijkstra<K extends Comparable<K>, V extends Comparable<V>, L extend
 			}
 		}
 
-		System.out.printf( "Distancias mas cortas iniciando en vertice %d\n", inicial );
-		for( int i = 1; i <= V; ++i )
-		{
-			System.out.printf( "Vertice %d , distancia mas corta = %d\n", i, distancia[i] );
-		}
-		dijkstraEjecutado = true;
 	}
 
 	// Impresion del camino mas corto desde el vertice inicial y final ingresados
-	public void print( int destino )
+	public void print( int destino, IGraph G )
 	{
-		if( previo[destino] != -1 )    // si aun poseo un vertice previo
-			print( previo[destino] );  // recursivamente sigo explorando
-		System.out.printf( "%d ", destino );        // terminada la recursion imprimo los vertices recorridos
+		if( previo[destino] != -1 )// si aun poseo un vertice previo
+			tamanio++;
+			print( previo[destino],G);  // recursivamente sigo explorando
+		System.out.printf( "%d ", destino ); // terminada la recursion imprimo los vertices recorridos
+	    System.out.printf(G.getVertexInfo(previo[destino]));
+	    System.out.print(tamanio);
+	}
+	public UndirectedGraph<?,?,Integer> crearGrafo(IGraph G,int destino){
+	 
+	 UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>(tamanio);
+	 int actual = destino;
+	  while(previo[actual]!=-1)
+	  {
+		  g.addEdge(actual, previo[actual], G.getEdgeDoubleCost(actual, previo[actual]));
+		  g.setVertexInfo(actual, G.getVertexInfo(actual));
+		  g.setVertexInfo(previo[actual], G.getVertexInfo(previo[actual]));
+		  actual= previo[actual];
+	  }
+	 
+
+	 return g;
 	}
 }

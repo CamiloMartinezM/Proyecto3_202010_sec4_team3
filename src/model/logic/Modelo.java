@@ -30,6 +30,7 @@ import model.data_structures.HashTable;
 import model.data_structures.IGraph;
 import model.data_structures.MST;
 import model.data_structures.MaxHeapPQ;
+import model.data_structures.Queue;
 import model.data_structures.UndirectedGraph;
 import model.data_structures.Vertex;
 
@@ -487,7 +488,74 @@ public class Modelo
 
 		return darReporteGrafo( grafoJS );
 	}
+    // ------------------------------------------------------------------------------------------------------------
+	// PARTE A
+	//------------------------------------------------------------------------------------------------------------
+	/**
+	 * Parte A, punto 1.
+	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco
+	 * como medida base.
+	 * El punto de origen y destino son ingresados por el usuario como latitudes y
+	 * longitudes (debe validarse que dichos puntos se encuentren dentro de los
+	 * límites encontrados de la ciudad).
+	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla
+	 * vial.
+	 * @throws IOException 
+	 */
+	public void caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
+			double longitudDes ) throws IOException
+	{
+	  int verticeOrigen = darVerticeMasCercanoA(latitudOr,longitudOr,50);
+	  int verticeDestino= darVerticeMasCercanoA(latitudDes,longitudDes,50);
+	  Dijkstra shortestPath=  new Dijkstra(grafoFD,verticeOrigen,verticeDestino);
+      shortestPath.print(verticeDestino, grafoFD);
+      UndirectedGraph<?, ?, Integer> g = shortestPath.crearGrafo(grafoFD, verticeDestino);
+      pintarCaminoDeCostoMinimoGoogleMaps(g);	
+	}
+	
+	/**
+	 * PARTE A. Punto 1.
+	 * @return Reporte con la información solicitada.
+	 * @throws IOException Si hay un problema en la lectura de algún archivo.
+	 */
+	public void pintarCaminoDeCostoMinimoGoogleMaps( UndirectedGraph<?, ?, Integer> g ) throws IOException
+	{
+		FileWriter w = inicializarHTML( );
 
+		// Se itera sobre los vertices.
+		int i = -1;
+		while( ++i < g.numberOfVertices() )
+		{
+			String infoVertice = g.getVertexInfo( i );
+			String latitud1 = infoVertice.split( "," )[1];
+			String longitud1 = infoVertice.split( "," )[0];
+
+			w = pintarUnCirculo( w, VALOR_RADIO , colores[i], latitud1, longitud1 );
+
+			// Se itera sobre las adyacencias.
+			for( Edge<?, ?, Integer> e : g.edgesAdjacentTo( i ) )
+			{
+				String latitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[1];
+				String longitud2 = g.getVertexInfo( e.other( i ) ).split( "," )[0];
+				w = pintarUnaLinea( w, colores[i], latitud1, longitud1, latitud2, longitud2 );
+				w = pintarUnCirculo( w, VALOR_RADIO / 2, colores[i], latitud2, longitud2 );
+			}
+
+			i++;
+		}
+
+		finalizarHTML( w );
+		abrirGrafoEnNavegador( );
+	}
+	/**
+	 * Parte A, punto 2
+	 * Determinar la red de comunicaciones que soporte la instalación de cámaras de video 
+	 * en los M puntos donde se presenta el mayor número de comparendos en la ciudad.
+	 */
+	public void redDeComunicacionesCamaraDeVideo(int M)
+	{
+		
+	}
 	// ---------------------------------------------------------------------------------------------------------------------------
 	// PARTE B
 	// ---------------------------------------------------------------------------------------------------------------------------
@@ -598,7 +666,30 @@ public class Modelo
 	// ---------------------------------------------------------------------------------------------------------------------------
 	// PARTE C
 	// ---------------------------------------------------------------------------------------------------------------------------
-
+	/**
+	 * PARTE C. Punto 1.
+	 * @return Grafo de las zonas de impacto.
+	 */
+	 public UndirectedGraph<?,?,Integer> CaminosMasCortosParaComparendosMasGraves(int M)
+	 {
+	 UndirectedGraph<?, ?, Integer> g = new UndirectedGraph<>( grafoFD.numberOfVertices( ) );
+	 Queue<Comparendo> comp = new Queue<>() ;
+	 for (int i = 0; i < M; i++) {
+		Comparendo actual = comparendos.poll();
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		comp.enQueue(actual);
+	 }
+	 return g;
+	 }
+	
 	/**
 	 * PARTE C. Punto 2.
 	 * @return Grafo de las zonas de impacto.
@@ -1042,23 +1133,6 @@ public class Modelo
 		return cadena;
 	}
 
-	/**
-	 * el camino de costo mínimo se debe tomar la distancia haversiana en cada arco
-	 * como medida base.
-	 * El punto de origen y destino son ingresados por el usuario como latitudes y
-	 * longitudes (debe validarse que dichos puntos se encuentren dentro de los
-	 * límites encontrados de la ciudad).
-	 * Estas ubicaciones deben aproximarse a los vértices más cercanos en la malla
-	 * vial.
-	 */
-	public void caminoDeCostoMinimoDistancia( double latitudOr, double longitudOr, double latitudDes,
-			double longitudDes )
-	{
-		int verticeOrigen = darVerticeMasCercanoA( latitudOr, longitudOr, 50 );
-		int verticeDestino = darVerticeMasCercanoA( latitudDes, longitudDes, 50 );
-		Dijkstra shortestPath = new Dijkstra( grafoFD, verticeOrigen, verticeDestino );
-		shortestPath.print( verticeDestino );
-	}
 
 	/**
 	 * Lee un archivo en un String, contando los caracteres de separación.
